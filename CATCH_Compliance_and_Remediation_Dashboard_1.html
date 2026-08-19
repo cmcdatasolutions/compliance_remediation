@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>CATCH Greater Houston – Compliance Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:Arial,sans-serif;background:rgba(0,0,0,.30);background-color:#b3b3b3;color:#1a1a1a}
+  body{display:flex;flex-direction:column;min-height:100vh}
+  .header{background:#1F4E79;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100}
+  .sticky-top{position:sticky;top:76px;z-index:90;background:#b3b3b3;padding-top:16px;padding-bottom:16px;margin-left:-28px;margin-right:-28px;padding-left:28px;padding-right:28px;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+  .upload-bar{background:#EFF6FF;border:1.5px dashed #185FA5;border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+  .upload-bar-label{font-size:12px;color:#1e40af;font-weight:600;flex:1;min-width:200px}
+  .upload-bar-label span{font-weight:400;color:#6b7280;font-size:11px;display:block;margin-top:2px}
+  .upload-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;background:#185FA5;color:#fff;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:Arial,sans-serif;white-space:nowrap}
+  .upload-btn:hover{background:#0C447C}
+  .upload-status{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;white-space:nowrap}
+  .upload-status.ok{background:#dcfce7;color:#166534}
+  .upload-status.err{background:#fee2e2;color:#991b1b}
+  .upload-status.idle{color:#6b7280}
+  .header-title{color:#fff;font-size:20px;font-weight:700;letter-spacing:.01em}
+  .header-sub{color:#9FC5E8;font-size:13px;margin-top:2px}
+  .header-badge{background:#2E75B6;color:#fff;font-size:12px;padding:4px 12px;border-radius:12px;font-weight:600}
+  .main{max-width:1400px;width:100%;margin:0 auto;padding:0 28px}
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+  .kpi{background:#fff;border-radius:10px;padding:16px 18px;border:1px solid #e2e8f0;border-top:4px solid #e2e8f0}
+  .kpi.kpi-blue{border-top-color:#185FA5}.kpi.kpi-red{border-top-color:#A32D2D}
+  .kpi.kpi-amber{border-top-color:#854F0B}.kpi.kpi-green{border-top-color:#3B6D11}.kpi.kpi-navy{border-top-color:#1F4E79}
+  .kpi-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:600}
+  .kpi-value{font-size:30px;font-weight:700}
+  .kpi-blue .kpi-value{color:#185FA5}.kpi-red .kpi-value{color:#A32D2D}
+  .kpi-amber .kpi-value{color:#854F0B}.kpi-green .kpi-value{color:#3B6D11}.kpi-navy .kpi-value{color:#1F4E79}
+  .section-title{font-size:13px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+  .prog-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;align-items:center}
+  .prog-chip{position:relative;padding:7px 16px;border-radius:20px;font-size:13px;cursor:pointer;border:1.5px solid #d1d5db;background:#fff;color:#000;font-weight:700;transition:all .15s;user-select:none}
+  .prog-chip:hover{border-color:#185FA5;color:#185FA5;background:#EFF6FF}
+  .prog-chip.active{background:#185FA5;color:#fff;border-color:#185FA5;font-weight:700}
+  .tooltip-box{display:none;position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);width:280px;background:#fff;border:1.5px solid #d1d5db;border-radius:10px;padding:12px 14px;font-size:12px;color:#1a1a1a;line-height:1.6;z-index:999;pointer-events:none;text-align:left;box-shadow:0 4px 16px rgba(0,0,0,.12)}
+  .tooltip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#d1d5db}
+  .prog-chip:hover .tooltip-box{display:block}
+  .filter-row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:24px;padding:16px 20px;background:#fff;border-radius:10px;border:1px solid #e2e8f0}
+  .filter-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:200px}
+  .filter-label{font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em}
+  .filter-select{padding:8px 12px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#374151;font-size:13px;font-family:Arial,sans-serif;cursor:pointer;width:100%}
+  .filter-select:focus{outline:none;border-color:#185FA5}
+  .filter-reset{padding:8px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:13px;font-family:Arial,sans-serif;cursor:pointer;align-self:flex-end;white-space:nowrap}
+  .filter-reset:hover{border-color:#185FA5;color:#185FA5}
+  .card{background:#fff;border-radius:10px;padding:18px 20px;border:1px solid #e2e8f0}
+  .card-title{font-size:14px;font-weight:700;margin-bottom:14px;color:#1a1a1a}
+  .gap-section{background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden}
+  .gap-top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #e2e8f0}
+  .gap-title{font-size:14px;font-weight:700;color:#1a1a1a}
+  .gap-count{font-size:13px;color:#6b7280;font-weight:400;margin-left:6px}
+  .export-btn{display:flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;border:1.5px solid #185FA5;background:#185FA5;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;transition:all .15s}
+  .export-btn:hover{background:#0C447C;border-color:#0C447C}
+  .export-btn:disabled{opacity:.5;cursor:not-allowed}
+  .gap-wrap{max-height:420px;overflow-y:auto}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  thead{position:sticky;top:0;z-index:2}
+  th{text-align:left;padding:9px 14px;background:#F8FAFC;color:#374151;font-weight:700;font-size:11px;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.04em}
+  td{padding:9px 14px;border-bottom:1px solid #f1f5f9;vertical-align:top;color:#1a1a1a}
+  tr:hover td{background:#f8fafc}
+  .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+  .badge-crit{background:#FCE4D6;color:#791F1F}
+  .badge-high{background:#FAEEDA;color:#633806}
+  .badge-med{background:#EAF3DE;color:#27500A}
+  .badge-ok{background:#dcfce7;color:#166534}
+  .empty{text-align:center;padding:3rem;color:#6b7280;font-size:14px}
+  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;align-items:start}
+  .chart-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden}
+  .chart-card-header{padding:16px 20px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+  .chart-card-title{font-size:13px;font-weight:700;color:#1a1a1a;letter-spacing:.01em}
+  .chart-card-body{padding:16px 20px}
+  .doc-bar-row{margin-bottom:14px}.doc-bar-row:last-child{margin-bottom:0}
+  .doc-name{font-size:11px;color:#6b7280;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .bar-wrap{display:flex;align-items:center;gap:8px}
+  .bar-track{height:22px;background:#f1f5f9;border-radius:6px;overflow:hidden;display:flex;flex:1}
+  .bar-total{font-size:12px;color:#374151;font-weight:700;min-width:24px;text-align:right}
+  .bar-seg{height:100%;transition:width .4s;display:flex;align-items:center;justify-content:center}
+  .bar-crit{background:#E24B4A}.bar-high{background:#EF9F27}.bar-med{background:#639922}
+  .pct-row{display:flex;align-items:center;gap:10px;margin-bottom:11px}.pct-row:last-child{margin-bottom:0}
+  .pct-name{font-size:11px;color:#6b7280;flex:0 0 140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .pct-track{flex:1;height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden}
+  .pct-fill{height:100%;border-radius:5px;transition:width .4s}
+  .pct-val{font-size:12px;color:#374151;font-weight:700;min-width:44px;text-align:right}
+  .legend-row{display:flex;gap:12px;flex-wrap:wrap}
+  .leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280;font-weight:600}
+  .leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+  /* ── HISTORY SECTION ── */
+  .history-run{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;margin-bottom:10px}
+  .history-run-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .history-run-title{font-size:13px;font-weight:700;color:#1F4E79}
+  .history-run-meta{font-size:12px;color:#6b7280}
+  .history-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin:2px}
+  .history-pill.added{background:#dcfce7;color:#166534}
+  .history-pill.removed{background:#fee2e2;color:#991b1b}
+  /* ── ADMIN PANEL ── */
+  .admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:8888;display:none;align-items:center;justify-content:center}
+  .admin-overlay.open{display:flex}
+  .admin-box{background:#fff;border-radius:14px;width:100%;max-width:760px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .admin-hdr{background:#1F4E79;padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
+  .admin-hdr h2{color:#fff;font-size:15px;font-weight:700}
+  .admin-hdr p{color:rgba(255,255,255,.65);font-size:11px;margin-top:2px}
+  .admin-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:6px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .admin-body{padding:20px 24px;overflow-y:auto;flex:1}
+  .admin-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#6b7280;margin-bottom:12px;margin-top:20px}
+  .admin-section-title:first-child{margin-top:0}
+  .admin-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px}
+  .admin-table th{text-align:left;padding:9px 12px;background:#f8fafc;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;border-bottom:2px solid #e5e7eb}
+  .admin-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  .admin-table tr:hover td{background:#f8fafc}
+  .prog-select{border:1px solid #d1d5db;border-radius:6px;padding:5px 8px;font-size:12px;font-family:Arial,sans-serif;color:#1a1a1a;background:#fff}
+  .del-btn{background:#fee2e2;border:none;color:#dc2626;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif}
+  .del-btn:hover{background:#fecaca}
+  .admin-add-form{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin-bottom:8px}
+  .admin-add-form h3{font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+  .admin-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .admin-form-field{display:flex;flex-direction:column;gap:4px}
+  .admin-form-field label{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+  .admin-form-field input,.admin-form-field select{border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;font-family:Arial,sans-serif;outline:none}
+  .admin-form-field input:focus,.admin-form-field select:focus{border-color:#1F4E79}
+  .admin-save-btn{background:#1F4E79;color:#fff;border:none;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer}
+  .admin-save-btn:hover{background:#163d61}
+  .admin-save-btn:disabled{background:#9ca3af;cursor:not-allowed}
+  .admin-status{font-size:12px;font-weight:600;padding:8px 14px;border-radius:7px;margin-top:10px;display:none}
+  .admin-status.ok{background:#dcfce7;color:#166534}
+  .admin-status.err{background:#fee2e2;color:#991b1b}
+  /* ── LOGIN ── */
+  .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+  .login-box{background:#fff;border-radius:16px;padding:40px 44px;width:100%;max-width:420px;box-shadow:0 25px 60px rgba(0,0,0,.4)}
+  .login-logo{text-align:center;margin-bottom:28px}
+  .login-logo-icon{width:56px;height:56px;background:#1F4E79;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:12px}
+  .login-logo h2{font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
+  .login-logo p{font-size:12px;color:#6b7280}
+  .login-field{margin-bottom:16px}
+  .login-field label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+  .login-field input{width:100%;padding:11px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;font-family:Arial,sans-serif;outline:none;transition:border .15s}
+  .login-field input:focus{border-color:#1F4E79}
+  .login-btn{width:100%;padding:12px;background:#1F4E79;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;transition:background .15s;margin-top:4px}
+  .login-btn:hover{background:#163d61}
+  .login-btn:disabled{background:#9ca3af;cursor:not-allowed}
+  .login-error{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;margin-top:12px;display:none}
+  .login-loading{text-align:center;color:#6b7280;font-size:12px;margin-top:12px;display:none}
+  .login-footer{color:#94a3b8;font-size:11px;text-align:center;margin-top:20px}
+  .user-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border-radius:8px;padding:6px 12px;font-size:12px;color:#fff;min-height:32px}
+  .user-badge:empty{display:none}
+  .logout-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;margin-left:8px}
+  .logout-btn:hover{background:rgba(255,255,255,.25)}
+  @media(max-width:900px){.charts-row{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ============ Remediation Tracker tab (scoped under .viz-root) ============ */
+.viz-root {
+  color-scheme: light;
+  --surface-1:      #fcfcfb;
+  --page:           #f9f9f7;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #898781;
+  --grid:           #e1e0d9;
+  --baseline:       #c3c2b7;
+  --border:         rgba(11,11,11,0.10);
+  --series-1:       #2a78d6;
+  --status-good:      #0ca30c;
+  --status-warning:   #fab219;
+  --status-serious:   #ec835a;
+  --status-critical:  #d03b3b;
+  --success-text:   #006300;
+  background: var(--page); color: var(--text-primary);
+  padding: 20px 4px 40px; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.viz-root, .viz-root * { box-sizing: border-box; }
+.viz-root .wrap { max-width: 1180px; margin: 0 auto; }
+
+.viz-root header.page-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; margin-bottom: 22px; flex-wrap: wrap;
+}
+.viz-root header.page-head .brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.viz-root .logo-wrap {
+  background: #ffffff; border: 1px solid var(--border); border-radius: 10px;
+  padding: 7px 10px; display: inline-flex; align-items: center; flex: none;
+}
+.viz-root .logo-wrap .logo { display: block; height: 42px; width: auto; }
+.viz-root header.page-head h1 { font-size: 21px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+.viz-root header.page-head p.sub { margin: 0; font-size: 13px; color: var(--text-secondary); max-width: 640px; line-height: 1.5; }
+
+/* Stat tiles */
+.viz-root .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.viz-root .tile {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 18px; position: relative; overflow: hidden;
+}
+.viz-root .tile .accent { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.viz-root .tile.total .accent { background: var(--series-1); }
+.viz-root .tile.completed .accent { background: var(--status-good); }
+.viz-root .tile.pending .accent { background: var(--status-warning); }
+.viz-root .tile.incomplete .accent { background: var(--status-serious); }
+.viz-root .tile .label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-bottom: 8px; }
+.viz-root .tile .count { font-size: 26px; font-weight: 700; line-height: 1.1; font-variant-numeric: proportional-nums; }
+.viz-root .tile .count .unit { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-left: 4px; }
+.viz-root .tile .cost { font-size: 14px; color: var(--text-secondary); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.viz-root .tile .pct { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* Progress meter */
+.viz-root .meter-card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 18px 14px; margin-bottom: 20px;
+}
+.viz-root .meter-card .meter-head { display:flex; justify-content: space-between; align-items:baseline; margin-bottom: 10px; }
+.viz-root .meter-card .meter-head h2 { font-size: 13px; font-weight: 600; margin: 0; }
+.viz-root .meter-card .meter-head span { font-size: 12px; color: var(--text-muted); }
+.viz-root .meter-track {
+  display: flex; height: 14px; border-radius: 7px; overflow: hidden;
+  background: var(--grid); gap: 2px;
+}
+.viz-root .meter-seg { height: 100%; min-width: 2px; transition: width .25s ease; }
+.viz-root .meter-seg.completed { background: var(--status-good); }
+.viz-root .meter-seg.pending { background: var(--status-warning); }
+.viz-root .meter-seg.incomplete { background: var(--status-serious); }
+.viz-root .meter-legend { display: flex; gap: 18px; margin-top: 10px; flex-wrap: wrap; }
+.viz-root .meter-legend .item { display:flex; align-items:center; gap: 6px; font-size: 12.5px; color: var(--text-secondary); }
+.viz-root .meter-legend .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.viz-root .meter-legend .swatch.completed { background: var(--status-good); }
+.viz-root .meter-legend .swatch.pending { background: var(--status-warning); }
+.viz-root .meter-legend .swatch.incomplete { background: var(--status-serious); }
+
+/* Controls */
+.viz-root .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.viz-root .controls input[type=search], .viz-root .controls select {
+  background: var(--surface-1); border: 1px solid var(--border); color: var(--text-primary);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit;
+}
+.viz-root .controls input[type=search] { flex: 1 1 240px; min-width: 180px; }
+.viz-root .controls .spacer { flex: 1; }
+.viz-root .checkbox-filter {
+  display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary);
+  white-space: nowrap; cursor: pointer; user-select: none;
+}
+.viz-root .checkbox-filter input { accent-color: var(--series-1); width: 14px; height: 14px; cursor: pointer; }
+.viz-root .table-summary { font-size: 12px; color: var(--text-muted); margin: -4px 2px 8px; }
+.viz-root .btn {
+  border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
+  border-radius: 8px; padding: 8px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit;
+}
+.viz-root .btn:hover { color: var(--text-primary); }
+.viz-root .btn.primary { background: var(--series-1); border-color: var(--series-1); color: #fff; }
+.viz-root input[type=file] { display: none; }
+
+/* Table */
+.viz-root .table-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.viz-root table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.viz-root thead th {
+  text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--grid);
+  position: sticky; top: 0; background: var(--surface-1);
+}
+.viz-root th.num, .viz-root td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.viz-root tbody tr.item-row { border-bottom: 1px solid var(--grid); cursor: pointer; }
+.viz-root tbody tr.item-row:hover { background: color-mix(in srgb, var(--text-primary) 3%, transparent); }
+.viz-root tbody td { padding: 10px 12px; vertical-align: top; color: var(--text-primary); }
+.viz-root td.sn { color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.viz-root td.q { overflow: hidden; }
+.viz-root td.q .qtext {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  line-height: 1.4; word-wrap: break-word; overflow-wrap: break-word;
+}
+.viz-root tr.item-row.expanded td.q .qtext { -webkit-line-clamp: unset; }
+.viz-root td.owner { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viz-root td.cat { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viz-root td.dur { color: var(--text-secondary); white-space: nowrap; }
+.viz-root .chev { display: inline-block; margin-right: 6px; color: var(--text-muted); transition: transform .15s ease; font-size: 10px; }
+.viz-root tr.item-row.expanded .chev { transform: rotate(90deg); }
+
+.viz-root tr.detail-row td {
+  background: color-mix(in srgb, var(--text-primary) 2.5%, transparent);
+  padding: 4px 12px 14px 34px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.55;
+}
+.viz-root tr.detail-row .detail-label { font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 10.5px; letter-spacing: .03em; margin-top: 8px; display: block; }
+.viz-root tr.detail-row .detail-label:first-child { margin-top: 0; }
+
+.viz-root select.status-select {
+  font-size: 12px; padding: 5px 8px; border-radius: 999px; border: 1px solid transparent;
+  font-weight: 600; cursor: pointer; font-family: inherit; appearance: none; -webkit-appearance: none;
+  background-position: right 8px center; background-repeat: no-repeat; background-size: 9px;
+  padding-right: 22px; white-space: nowrap;
+}
+.viz-root select.status-select.Completed {
+  background-color: color-mix(in srgb, var(--status-good) 16%, transparent);
+  color: var(--success-text); border-color: color-mix(in srgb, var(--status-good) 40%, transparent);
+}
+.viz-root select.status-select.Pending {
+  background-color: color-mix(in srgb, var(--status-warning) 22%, transparent);
+  color: color-mix(in srgb, var(--status-warning) 70%, var(--text-primary));
+  border-color: color-mix(in srgb, var(--status-warning) 55%, transparent);
+}
+.viz-root select.status-select.Incomplete {
+  background-color: color-mix(in srgb, var(--status-serious) 20%, transparent);
+  color: color-mix(in srgb, var(--status-serious) 70%, var(--text-primary));
+  border-color: color-mix(in srgb, var(--status-serious) 50%, transparent);
+}
+
+.viz-root .empty-state { padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* Add-item modal */
+.viz-root .modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 5000; padding: 20px;
+}
+.viz-root .modal-card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+  width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+  padding: 20px 22px 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.viz-root .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.viz-root .modal-head h2 { font-size: 16px; margin: 0; font-weight: 700; }
+.viz-root .modal-close {
+  border: none; background: transparent; color: var(--text-muted); font-size: 15px;
+  cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1;
+}
+.viz-root .modal-close:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+.viz-root .field { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
+.viz-root .field label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+.viz-root .field label .optional { font-weight: 400; color: var(--text-muted); }
+.viz-root .field label .req { color: var(--status-critical); }
+.viz-root .field input, .viz-root .field textarea, .viz-root .field select {
+  background: var(--page); border: 1px solid var(--border); color: var(--text-primary);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit; resize: vertical;
+}
+.viz-root .field input:focus, .viz-root .field textarea:focus, .viz-root .field select:focus {
+  outline: 2px solid var(--series-1); outline-offset: -1px;
+}
+.viz-root .field-row { display: flex; gap: 10px; }
+.viz-root .field-row .field { flex: 1; min-width: 0; }
+.viz-root .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+.viz-root footer.note { margin-top: 16px; font-size: 12px; color: var(--text-muted); line-height: 1.6; max-width: 900px; }
+.viz-root footer.note strong { color: var(--text-secondary); }
+
+@media (max-width: 900px) {
+  .viz-root .tiles { grid-template-columns: repeat(2, 1fr); }
+  .viz-root td.q { max-width: 260px; }
+}
+
+/* Tab bar for switching between Compliance Gaps and Remediation Tracker */
+.dash-tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 2px solid #e2e8f0; }
+.dash-tab-btn {
+  padding: 10px 18px; border: none; background: transparent; font-size: 13px; font-weight: 700;
+  color: #6b7280; cursor: pointer; font-family: Arial, sans-serif; border-bottom: 3px solid transparent;
+  margin-bottom: -2px; transition: all .15s;
+}
+.dash-tab-btn:hover { color: #185FA5; }
+.dash-tab-btn.active { color: #1F4E79; border-bottom-color: #1F4E79; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+</style>
+</head>
+<body>
+
+<!-- ADMIN PANEL -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-box">
+    <div class="admin-hdr">
+      <div><h2>&#9881; User Access Management</h2><p>Add, remove, or modify dashboard user permissions</p></div>
+      <button class="admin-close" onclick="closeAdmin()">&#10005;</button>
+    </div>
+    <div class="admin-body">
+      <div id="tokenSection" style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:8px;padding:12px 16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#0369a1">&#128274; Source Token <span id="tokenStatus" style="font-weight:400;color:#16a34a"></span></div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px">Stored in browser memory only — cleared when tab closes.</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+              style="padding:6px 10px;border:1.5px solid #93c5fd;border-radius:6px;font-size:12px;font-family:Arial,sans-serif;width:220px;outline:none"
+              onkeydown="if(event.key==='Enter')saveToken()"/>
+            <button onclick="saveToken()" style="background:#0369a1;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">Set Token</button>
+            <button onclick="clearToken()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif" title="Clear">&#10005;</button>
+          </div>
+        </div>
+      </div>
+      <div class="admin-section-title">Current Users</div>
+      <table class="admin-table">
+        <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Program</th><th>Role</th><th>Action</th></tr></thead>
+        <tbody id="adminUserTable"></tbody>
+      </table>
+      <div class="admin-add-form">
+        <h3>&#43; Add New User</h3>
+        <div class="admin-form-grid">
+          <div class="admin-form-field"><label>First Name</label><input id="newFirstName" placeholder="First name"/></div>
+          <div class="admin-form-field"><label>Last Name</label><input id="newLastName" placeholder="Last name"/></div>
+          <div class="admin-form-field"><label>Email Address</label><input id="newEmail" type="email" placeholder="email@domain.com"/></div>
+          <div class="admin-form-field">
+            <label>Program Access</label>
+            <select id="newProgram">
+              <option value="ALL">ALL — Full Access</option>
+              <option value="GUIDE">GUIDE</option>
+              <option value="Care Transitions">Care Transitions</option>
+              <option value="CHI/PIN">CHI/PIN</option>
+              <option value="DPP">DPP</option>
+            </select>
+          </div>
+          <div class="admin-form-field">
+            <label>Role</label>
+            <select id="newRole"><option value="user">User</option><option value="admin">Admin</option></select>
+          </div>
+        </div>
+        <button class="admin-save-btn" onclick="addUser()">Add User</button>
+      </div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e5e7eb">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="admin-save-btn" id="saveGithubBtn" onclick="saveToGitHub()">&#128190; Save Changes</button>
+          <button class="admin-save-btn" onclick="refreshPermissions()" style="background:#16a34a">&#8635; Refresh Permissions</button>
+        </div>
+      </div>
+      <div class="admin-status" id="adminStatus"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">&#127973;</div>
+      <h2>CATCH Greater Houston</h2>
+      <p>Contract &amp; Compliance Dashboard &mdash; Secure Access</p>
+    </div>
+    <div class="login-field">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="Enter your email address" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Dashboard</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-loading" id="loginLoading">&#9203; Verifying access...</div>
+    <div class="login-footer">Access is restricted to authorized CATCH program staff.<br>Contact your administrator if you need access.</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">CATCH Greater Houston</div>
+    <div class="header-sub">Contract &amp; Compliance Dashboard</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div id="userBadge" class="user-badge"></div>
+    <div class="header-badge">CMC Data Solutions</div>
+  </div>
+</div>
+
+<div class="main" style="padding-top:16px;padding-bottom:32px">
+  <div class="dash-tabs">
+    <button class="dash-tab-btn active" id="tabBtn-compliance" onclick="switchDashTab('compliance')">Compliance Gaps</button>
+    <button class="dash-tab-btn" id="tabBtn-remediation" onclick="switchDashTab('remediation')">Remediation Tracker</button>
+  </div>
+  <div id="tabPanel-compliance" class="tab-panel active">
+
+
+  <!-- DATA SOURCE BAR -->
+  <div class="upload-bar">
+    <div class="upload-bar-label">
+      📂 Data Source
+      <span>Auto-loads from source on login. Upload a local file to override.</span>
+    </div>
+
+    <button class="upload-btn" onclick="autoLoadExcel()"><i class="ti ti-refresh"></i> Reload from Source</button>
+    <span class="upload-status idle" id="uploadStatus">Loading from Source…</span>
+  </div>
+
+  <div class="sticky-top">
+    <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:18px 20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+      <div class="section-title">Summary</div>
+      <div class="kpi-grid" id="kpiGrid"></div>
+    </div>
+    <div class="filter-row" style="margin-top:0;margin-bottom:0;box-shadow:0 2px 8px rgba(0,0,0,.07)">
+      <div class="filter-group">
+        <div class="filter-label">Filter by program <span style="font-size:10px;color:#9ca3af;font-weight:400;text-transform:none;letter-spacing:0">(hover for definition)</span></div>
+        <div class="prog-row" id="progRow" style="margin-bottom:0"></div>
+      </div>
+      <div class="filter-group" style="max-width:320px">
+        <div class="filter-label">Filter by document</div>
+        <select class="filter-select" id="docFilter" onchange="selectDoc(this.value)">
+          <option value="All">All documents</option>
+        </select>
+      </div>
+      <button class="filter-reset" onclick="resetFilters()">Reset filters</button>
+    </div>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <!-- HORIZONTAL BAR CHART: Gaps by Document -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div>
+        <span class="chart-card-title">Total Gaps by Document</span>
+        <span style="font-size:11px;color:#9ca3af;margin-left:10px">hover for details</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;font-size:11px;font-weight:600;color:#6b7280">
+        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#E24B4A"></span>High</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#EF9F27"></span>Medium</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#4ade80"></span>No Gaps</span>
+      </div>
+    </div>
+    <div class="chart-card-body" style="padding:20px 24px;background:#f0fdf4;border-radius:0 0 10px 10px" id="hBarContainer"></div>
+    <div id="hBarTooltip" style="display:none;position:fixed;background:#1F4E79;color:#fff;font-size:11px;font-weight:600;padding:7px 12px;border-radius:6px;pointer-events:none;z-index:9999;line-height:1.8;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)"></div>
+  </div>
+
+  <!-- HISTORY SECTION -->
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:20px">
+    <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#1a1a1a">&#128202; Run History</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px">Each time v8 script runs and pushes to source, a new entry is recorded here</div>
+      </div>
+      <button onclick="clearRunHistory()"
+        style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1.5px solid #fca5a5;background:#fff5f5;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;transition:all .15s;white-space:nowrap"
+        onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fff5f5'">
+        &#128465; Clear History
+      </button>
+      <button id="historyToggleBtn" onclick="toggleHistory()"
+        style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1.5px solid #d1d5db;background:#f8fafc;color:#374151;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;transition:all .15s">
+        <span id="historyToggleIcon">&#9650;</span> Hide
+      </button>
+    </div>
+    <div id="historySection"></div>
+  </div>
+
+  <!-- GAPS TABLE -->
+  <div class="gap-section">
+    <div class="gap-top">
+      <div><span class="gap-title">Compliance Gaps</span><span class="gap-count" id="gapCount"></span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="gapsToggleBtn" onclick="toggleGaps()"
+          style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1.5px solid #d1d5db;background:#f8fafc;color:#374151;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">
+          <span>&#9650;</span> Hide
+        </button>
+        <button class="export-btn" id="exportBtn" onclick="exportExcel()">
+          <i class="ti ti-download"></i> Export to Excel
+        </button>
+      </div>
+    </div>
+    <div id="gapsBody_wrap" class="gap-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:22%">Document</th>
+          <th style="width:10%">Program</th>
+          <th style="width:10%">Severity</th>
+          <th style="width:18%">Gap</th>
+          <th style="width:40%">Resolution</th>
+        </tr></thead>
+        <tbody id="gapBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  </div><!-- /tabPanel-compliance -->
+
+  <div id="tabPanel-remediation" class="tab-panel">
+<div class="viz-root">
+  <div class="wrap">
+
+    <header class="page-head">
+      <div class="brand">
+        <div class="logo-wrap"><img src="data:image/png;base64,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" alt="CATCH — Greater Houston Community Care Hub" class="logo"></div>
+        <div>
+          <h1>Remediation Dashboard</h1>
+          <p class="sub">Tracks the 73 remediation actions from the Vendor Security Assessment Questionnaire (External Assessment – Moderate). Cost = duration × $120/hr internal rate; external vendor fees (e.g. SOC 2, penetration test) are not included. Change an item's status from the dropdown as remediation progresses — the totals above update live.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="tiles">
+      <div class="tile total">
+        <div class="accent"></div>
+        <div class="label">Total items</div>
+        <div class="count" id="remTileTotalCount">—</div>
+        <div class="cost" id="remTileTotalCost">—</div>
+        <div class="pct" id="remTileTotalNote"></div>
+      </div>
+      <div class="tile completed">
+        <div class="accent"></div>
+        <div class="label">Completed</div>
+        <div class="count" id="remTileCompletedCount">—</div>
+        <div class="cost" id="remTileCompletedCost">—</div>
+        <div class="pct" id="remTileCompletedPct"></div>
+      </div>
+      <div class="tile pending">
+        <div class="accent"></div>
+        <div class="label">Pending</div>
+        <div class="count" id="remTilePendingCount">—</div>
+        <div class="cost" id="remTilePendingCost">—</div>
+        <div class="pct" id="remTilePendingPct"></div>
+      </div>
+      <div class="tile incomplete">
+        <div class="accent"></div>
+        <div class="label">Incomplete</div>
+        <div class="count" id="remTileIncompleteCount">—</div>
+        <div class="cost" id="remTileIncompleteCost">—</div>
+        <div class="pct" id="remTileIncompletePct"></div>
+      </div>
+    </div>
+
+    <div class="meter-card">
+      <div class="meter-head">
+        <h2>Overall progress (by item count)</h2>
+        <span id="remMeterSummary"></span>
+      </div>
+      <div class="meter-track">
+        <div class="meter-seg completed" id="remSegCompleted"></div>
+        <div class="meter-seg pending" id="remSegPending"></div>
+        <div class="meter-seg incomplete" id="remSegIncomplete"></div>
+      </div>
+      <div class="meter-legend">
+        <div class="item"><span class="swatch completed"></span><span id="remLegCompleted">Completed</span></div>
+        <div class="item"><span class="swatch pending"></span><span id="remLegPending">Pending</span></div>
+        <div class="item"><span class="swatch incomplete"></span><span id="remLegIncomplete">Incomplete</span></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="search" id="remSearchBox" placeholder="Search by SN, question, owner…">
+      <select id="remStatusFilter">
+        <option value="All">All statuses</option>
+        <option value="Completed">Completed</option>
+        <option value="Pending">Pending</option>
+        <option value="Incomplete">Incomplete</option>
+      </select>
+      <select id="remCategoryFilter">
+        <option value="All">All categories</option>
+      </select>
+      <label class="checkbox-filter"><input type="checkbox" id="remHideZeroCost"> Hide $0 items</label>
+      <div class="spacer"></div>
+      <button class="btn primary" id="remAddItemBtn" type="button">+ Add item</button>
+      <button class="btn" id="remExportBtn" type="button">⭳ Export progress</button>
+      <label class="btn" for="remImportFile">⭱ Import progress</label>
+      <input type="file" id="remImportFile" accept="application/json">
+    </div>
+
+    <div class="table-summary" id="remTableSummary"></div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px;">SN</th>
+            <th style="width:auto;">Item</th>
+            <th style="width:120px;">Category</th>
+            <th style="width:100px;">Owner</th>
+            <th style="width:80px;" class="num">Duration</th>
+            <th style="width:80px;" class="num">Cost</th>
+            <th style="width:140px;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="remTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="remEmptyState" style="display:none;">No items match your filters.</div>
+    </div>
+
+    <div class="modal-overlay" id="remAddModalOverlay" style="display:none;">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+        <div class="modal-head">
+          <h2 id="remAddModalTitle">Add item</h2>
+          <button class="modal-close" id="remAddModalClose" type="button" aria-label="Close">✕</button>
+        </div>
+        <form id="remAddItemForm">
+          <div class="field">
+            <label for="remFSn">SN <span class="optional">(optional — auto-assigned if blank)</span></label>
+            <input type="text" id="remFSn" placeholder="e.g. 1001">
+          </div>
+          <div class="field">
+            <label for="remFQuestion">Question / evidence required <span class="req">*</span></label>
+            <textarea id="remFQuestion" rows="2" required></textarea>
+          </div>
+          <div class="field">
+            <label for="remFOwner">Data owner</label>
+            <input type="text" id="remFOwner" placeholder="e.g. Tom, Jim">
+          </div>
+          <div class="field">
+            <label for="remFCategory">Category <span class="optional">(optional)</span></label>
+            <input type="text" id="remFCategory" list="remCategoryOptions" placeholder="e.g. Vendor Contracts">
+            <datalist id="remCategoryOptions"></datalist>
+          </div>
+          <div class="field">
+            <label for="remFAction">Remediation action</label>
+            <textarea id="remFAction" rows="2" placeholder="e.g. Draft and implement…"></textarea>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="remFDuration">Duration</label>
+              <input type="text" id="remFDuration" placeholder="e.g. 4 hours or N/A">
+            </div>
+            <div class="field">
+              <label for="remFCost">Cost ($)</label>
+              <input type="number" id="remFCost" min="0" step="1" placeholder="0">
+            </div>
+            <div class="field">
+              <label for="remFStatus">Status</label>
+              <select id="remFStatus">
+                <option value="Pending" selected>Pending</option>
+                <option value="Incomplete">Incomplete</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn" id="remAddModalCancel">Cancel</button>
+            <button type="submit" class="btn primary">Add item</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer class="note">
+      <strong>About this dashboard.</strong> Built from the vendor security assessment questionnaire and cost analysis; statuses for the 31 actionable items come from the internal task tracker's "Open Items" tab, the remaining 42 items are marked "No action required" / "Not applicable" in the source questionnaire and start as <strong>Completed</strong>. Status changes, added items, and imports live only in this open view — this is a self-contained page with no server or browser storage, so use <strong>Export progress</strong> to save a full snapshot (JSON, including any items you've added) and <strong>Import progress</strong> to reload it (e.g. in a fresh copy of this dashboard) later. Use <strong>+ Add item</strong> to add a new row to the tracker.
+    </footer>
+
+  </div>
+</div>
+
+
+  </div><!-- /tabPanel-remediation -->
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script>
+const BUILD_VERSION = '2026.06.17-v8-source';
+console.log('CATCH Dashboard build:', BUILD_VERSION);
+
+// ══ CONSTANTS ════════════════════════════════════════════════════════════════
+const EXCEL_URL      = 'https://raw.githubusercontent.com/cmcdatasolutions/catch-dashboard/main/CATCH_Compliance_Dashboard.xlsx';
+const ACCESS_JSON_URL= 'https://raw.githubusercontent.com/cmcdatasolutions/catch-dashboard/main/catch_dashboard_access.json';
+const ACCESS_JSON_API= 'https://api.github.com/repos/cmcdatasolutions/catch-dashboard/contents/catch_dashboard_access.json';
+const GITHUB_API_URL = ACCESS_JSON_API;
+
+const PROG_DEFS = {
+  "All":              "Show all documents regardless of program coverage.",
+  "GUIDE":            "Guiding an Informed Dementia Experience: CMS Innovation model supporting comprehensive dementia care.",
+  "CHI/PIN":          "Community Health Integration / Principal Illness Navigation: CMS programs for community health workers and patient navigation.",
+  "DPP":              "Diabetes Prevention Program: Evidence-based program to prevent type 2 diabetes.",
+  "Care Transitions": "Care Transitions: Structured intervention supporting patients moving between care settings."
+};
+
+// ══ STATE ════════════════════════════════════════════════════════════════════
+let currentUser  = null;
+let selectedProg = 'All';
+let selectedDoc  = 'All';
+
+// Data loaded from v8 Excel
+let dashRecords  = []; // from "Compliance Dashboard" sheet
+let gapsRecords  = []; // from "Compliance Gaps" sheet
+let historyRuns  = []; // from "History" sheet
+
+// ══ EMBEDDED USERS ═══════════════════════════════════════════════════════════
+let EMBEDDED_USERS = [
+  { RowCount:1, FirstName:'Janice',  LastName:'Sparks', EmailAddress:'janice.sparks@catchgh.org',             Program:'ALL',   Role:'admin' },
+  { RowCount:2, FirstName:'Brandi',  LastName:'Smith',  EmailAddress:'brandi.smith@houstontx.gov',            Program:'ALL',   Role:'admin' },
+  { RowCount:3, FirstName:'Michael', LastName:'Creary', EmailAddress:'creary.michael@digitaldataexperts.net', Program:'GUIDE', Role:'user'  },
+  { RowCount:4, FirstName:'Janice',  LastName:'Creary', EmailAddress:'support@digitaldataexperts.net',        Program:'ALL',   Role:'admin' },
+];
+
+// ══ ACCESS LIST ══════════════════════════════════════════════════════════════
+async function fetchAccessList() {
+  try {
+    const r = await fetch(ACCESS_JSON_URL + '?t=' + Date.now(), {cache:'no-store'});
+    if (r.ok) { const rows = await r.json(); EMBEDDED_USERS = rows; return rows; }
+  } catch(_) {}
+  try {
+    const token = getGithubToken();
+    if (token) {
+      const r = await fetch(ACCESS_JSON_API, {headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});
+      if (r.ok) { const d = await r.json(); const rows = JSON.parse(atob(d.content.replace(/\n/g,''))); EMBEDDED_USERS = rows; return rows; }
+    }
+  } catch(_) {}
+  return EMBEDDED_USERS;
+}
+
+// ══ LOGIN ════════════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email  = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const errEl  = document.getElementById('loginError');
+  const btn    = document.getElementById('loginBtn');
+  const loadEl = document.getElementById('loginLoading');
+  errEl.style.display = 'none';
+  if (!email) { showLoginError('Please enter your email address.'); return; }
+  btn.disabled = true; loadEl.style.display = 'block';
+  try {
+    const rows = await fetchAccessList();
+    const user = rows.find(r => String(r.EmailAddress||'').trim().toLowerCase() === email);
+    btn.disabled = false; loadEl.style.display = 'none';
+    if (!user) { showLoginError('Access denied. Contact your administrator.'); return; }
+    completeLogin(user);
+  } catch(err) {
+    btn.disabled = false; loadEl.style.display = 'none';
+    showLoginError('Login error: ' + err.message);
+  }
+}
+
+function completeLogin(user) {
+  currentUser = {
+    firstName: user.FirstName || '',
+    lastName:  user.LastName  || '',
+    email:     String(user.EmailAddress||'').trim().toLowerCase(),
+    program:   String(user.Program||'ALL').trim().toUpperCase(),
+    role:      String(user.Role||'user').trim().toLowerCase()
+  };
+  selectedProg = (currentUser.program === 'ALL') ? 'All' : currentUser.program;
+  document.getElementById('loginOverlay').style.display = 'none';
+  updateUserBadge(currentUser);
+  autoLoadExcel();
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('loginLoading').style.display = 'none';
+}
+
+function updateUserBadge(user) {
+  const el = document.getElementById('userBadge');
+  if (!el) return;
+  const isAdmin = (user.role === 'admin');
+  el.innerHTML = `
+    <span>&#128100;</span>
+    <strong>${user.firstName} ${user.lastName}</strong>
+    <span style="color:rgba(255,255,255,.6)">${user.email}</span>
+    <span style="background:rgba(255,255,255,.2);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">${user.program}</span>
+    ${isAdmin?`<button class="logout-btn" onclick="openAdmin()" style="background:rgba(255,204,0,.25);border-color:rgba(255,204,0,.4)">&#9881; Admin</button>`:''}
+    <button class="logout-btn" onclick="doLogout()">Sign Out</button>`;
+}
+
+function doLogout() {
+  currentUser = null; selectedProg = 'All'; selectedDoc = 'All';
+  dashRecords=[]; gapsRecords=[]; historyRuns=[];
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginOverlay').style.display = 'flex';
+}
+
+// ══ LOAD EXCEL FROM GITHUB ═══════════════════════════════════════════════════
+// Reads the Excel produced by v8 Python script.
+// Sheet names: "Compliance Dashboard" | "Compliance Gaps" | "History"
+async function autoLoadExcel() {
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.className = 'upload-status idle';
+  statusEl.textContent = '⏳ Loading from Source…';
+  try {
+    const resp = await fetch(EXCEL_URL + '?nocache=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    processWorkbook(buf, 'Source (v8 auto-load)');
+  } catch(e) {
+    statusEl.className = 'upload-status err';
+    statusEl.textContent = '✗ Could not load from Source — upload a local file to continue';
+    renderAll();
+  }
+}
+
+
+// ══ PROCESS WORKBOOK — reads v8 sheet names ═══════════════════════════════════
+// v8 Excel layout: each sheet has a TITLE row (row 1), then HEADER row (row 2), then data.
+// SheetJS sheet_to_json with {header:1} reads raw arrays so we skip row 0 (title)
+// and use row 1 as column headers manually.
+function sheetToObjects(ws) {
+  if (!ws) return [];
+  const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+  // row 0 = title (e.g. "CATCH Compliance Dashboard"), row 1 = headers, row 2+ = data
+  if (raw.length < 2) return [];
+  const headers = raw[1].map(h => String(h).trim());
+  return raw.slice(2)
+    .filter(r => r.some(v => v !== ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = r[i] !== undefined ? r[i] : ''; });
+      return obj;
+    });
+}
+
+function processWorkbook(arrayBuffer, sourceName) {
+  const statusEl = document.getElementById('uploadStatus');
+  try {
+    const wb = XLSX.read(arrayBuffer, {type:'array'});
+
+    // ── Sheet 1: Compliance Dashboard ────────────────────────────────────────
+    const sh1 = wb.Sheets['Compliance Dashboard'];
+    if (!sh1) throw new Error('"Compliance Dashboard" sheet not found in Excel.');
+    const raw1 = sheetToObjects(sh1);
+
+    dashRecords = raw1
+      .filter(r => r['#'] !== '' && !isNaN(Number(r['#'])))
+      .map(r => ({
+        num:     Number(r['#']),
+        docName: String(r['Document Name']     || '').trim(),
+        program: String(r['Program']           || '').trim(),
+        vendor:  String(r['Vendor/Party']      || '').trim(),
+        effDate: String(r['Effective Date']    || '').trim(),
+        endDate: String(r['Contract End Date'] || '').trim(),
+        scope:   String(r['Scope of Work']     || '').trim(),
+        sigs:    String(r['Signatures']        || '').trim(),
+        ins:     String(r['Insurance Clause']  || '').trim(),
+        conf:    String(r['Confidentiality']   || '').trim(),
+        hipaa:   String(r['HIPAA/DUA']         || '').trim(),
+        term:    String(r['Termination Clause']|| '').trim(),
+        status:  String(r['Compliance Status'] || '').trim(),
+        issues:  String(r['Issues Found']      || '').trim(),
+      }));
+
+    // ── Sheet 2: Compliance Gaps ──────────────────────────────────────────────
+    const sh2 = wb.Sheets['Compliance Gaps'];
+    if (sh2) {
+      const raw2 = sheetToObjects(sh2);
+      gapsRecords = raw2
+        .filter(r => r['#'] !== '' && !isNaN(Number(r['#'])))
+        .map(r => ({
+          num:        Number(r['#']),
+          docName:    String(r['Document Name'] || '').trim(),
+          program:    String(r['Program']       || '').trim(),
+          gap:        String(r['Gap Category']  || '').trim(),
+          severity:   String(r['Severity']      || '').trim(),
+          resolution: String(r['Resolution']    || '').trim(),
+        }));
+    } else {
+      gapsRecords = [];
+    }
+
+    // ── Sheet 3: History ─────────────────────────────────────────────────────
+    const sh3 = wb.Sheets['History'];
+    if (sh3) {
+      const raw3 = sheetToObjects(sh3);
+      historyRuns = raw3
+        .filter(r => r['Run #'] !== '' && !isNaN(Number(r['Run #'])))
+        .map(r => ({
+          run:    Number(r['Run #']),
+          ts:     String(r['Date & Time']       || '').trim(),
+          total:  Number(r['Documents Found']   || 0),
+          comp:   Number(r['Compliant']         || 0),
+          review: Number(r['Review Needed']     || 0),
+          notes:  String(r['Notes']             || '').trim(),
+        }));
+    } else {
+      historyRuns = [];
+    }
+
+    // Rebuild doc filter dropdown
+    const sel = document.getElementById('docFilter');
+    while (sel.options.length > 1) sel.remove(1);
+    dashRecords.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.docName;
+      opt.textContent = r.docName.length > 55 ? r.docName.substring(0,53)+'…' : r.docName;
+      sel.appendChild(opt);
+    });
+
+    selectedDoc = 'All';
+    renderAll();
+
+    statusEl.className = 'upload-status ok';
+    statusEl.textContent = `✓ Loaded: ${sourceName} (${dashRecords.length} docs · ${gapsRecords.length} gaps)`;
+
+  } catch(err) {
+    statusEl.className = 'upload-status err';
+    statusEl.textContent = '✗ ' + err.message;
+    console.error('processWorkbook error:', err);
+  }
+}
+
+// ══ FILTERING ════════════════════════════════════════════════════════════════
+function effectiveProg() {
+  if (!currentUser || currentUser.program === 'ALL') return selectedProg;
+  return currentUser.program; // restricted user always sees only their program
+}
+
+function filteredDash() {
+  const ep = effectiveProg();
+  return dashRecords.filter(r => {
+    if (ep !== 'All' && !r.program.toUpperCase().includes(ep.toUpperCase())) return false;
+    if (selectedDoc !== 'All' && r.docName !== selectedDoc) return false;
+    return true;
+  });
+}
+
+function filteredGaps() {
+  const ep = effectiveProg();
+  return gapsRecords.filter(r => {
+    if (ep !== 'All' && !r.program.toUpperCase().includes(ep.toUpperCase())) return false;
+    if (selectedDoc !== 'All' && r.docName !== selectedDoc) return false;
+    return true;
+  });
+}
+
+function selectProg(p) { selectedProg = p; selectedDoc = 'All'; document.getElementById('docFilter').value = 'All'; renderAll(); }
+function selectDoc(d)  { selectedDoc  = d; renderAll(); }
+function resetFilters() {
+  selectedProg = (currentUser && currentUser.program !== 'ALL') ? currentUser.program : 'All';
+  selectedDoc  = 'All';
+  document.getElementById('docFilter').value = 'All';
+  renderAll();
+}
+
+// ══ RENDER ═══════════════════════════════════════════════════════════════════
+let historyVisible = true;
+function toggleHistory() {
+  const section = document.getElementById('historySection');
+  const btn     = document.getElementById('historyToggleBtn');
+  historyVisible = !historyVisible;
+  section.style.display = historyVisible ? 'block' : 'none';
+  btn.innerHTML = `<span>${historyVisible?'&#9650;':'&#9660;'}</span> ${historyVisible?'Hide':'Show'}`;
+}
+
+function clearRunHistory() {
+  if (!historyRuns.length) { alert('No history to clear.'); return; }
+  if (!confirm(`Clear all ${historyRuns.length} run history entries? This cannot be undone.`)) return;
+  historyRuns = [];
+  renderHistory();
+}
+
+let gapsVisible = true;
+function toggleGaps() {
+  const wrap = document.getElementById('gapsBody_wrap');
+  const btn  = document.getElementById('gapsToggleBtn');
+  gapsVisible = !gapsVisible;
+  wrap.style.display = gapsVisible ? 'block' : 'none';
+  btn.innerHTML = `<span>${gapsVisible?'&#9650;':'&#9660;'}</span> ${gapsVisible?'Hide':'Show'}`;
+}
+
+function renderAll() { renderKPIs(); renderPrograms(); renderHBarChart(); renderHistory(); renderGaps(); }
+
+window.addEventListener('resize', () => { if (dashRecords.length) renderHBarChart(); });
+
+function renderKPIs() {
+  const fd = filteredDash(), fg = filteredGaps();
+  const comp   = fd.filter(r => r.status.includes('Compliant') && !r.status.includes('Review')).length;
+  const review = fd.length - comp;
+  const high   = fg.filter(r => r.severity === 'High').length;
+  const med    = fg.filter(r => r.severity === 'Medium').length;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi kpi-navy"><div class="kpi-label">Documents</div><div class="kpi-value">${fd.length}</div></div>
+    <div class="kpi kpi-green"><div class="kpi-label">&#10004; Compliant</div><div class="kpi-value">${comp}</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">&#9888; Review Needed</div><div class="kpi-value">${review}</div></div>
+    <div class="kpi kpi-red"><div class="kpi-label">High Severity Gaps</div><div class="kpi-value">${high}</div></div>
+    <div class="kpi kpi-blue"><div class="kpi-label">Total Gaps</div><div class="kpi-value">${fg.length}</div></div>`;
+}
+
+function renderPrograms() {
+  const allProgs = ['All','GUIDE','CHI/PIN','DPP','Care Transitions'];
+  const allowed  = (!currentUser || currentUser.program === 'ALL') ? allProgs : [currentUser.program];
+  const ep = effectiveProg();
+  document.getElementById('progRow').innerHTML = allowed.map(p => `
+    <div class="prog-chip ${ep===p?'active':''}" onclick="${(!currentUser||currentUser.program==='ALL')?`selectProg('${p}')`:''}">
+      ${p}<div class="tooltip-box">${PROG_DEFS[p]||p}</div>
+    </div>`).join('');
+}
+
+function shortName(n) { return n.length <= 38 ? n : n.substring(0,36)+'…'; }
+
+function renderDefectBars() { renderHBarChart(); }
+function renderPctBars()    { /* handled by renderHBarChart */ }
+
+function renderHBarChart() {
+  const fd        = filteredDash();
+  const container = document.getElementById('hBarContainer');
+  const tooltip   = document.getElementById('hBarTooltip');
+  if (!fd.length || !container) return;
+
+  const TOTAL_FIELDS = 8;
+  const BAR_H        = 28;  // bar height px
+  const ROW_GAP      = 10;  // gap between rows
+  const NAME_W       = 280; // fixed width for document name column
+  const VAL_W        = 36;  // width for count label after bar
+
+  // Build data
+  const data = fd.map(r => {
+    const docGaps = gapsRecords.filter(g => g.docName === r.docName);
+    const high    = docGaps.filter(g => g.severity === 'High').length;
+    const med     = docGaps.filter(g => g.severity === 'Medium').length;
+    const total   = high + med;
+    return { name: r.docName.replace(/\.(pdf|docx)$/i, ''), full: r.docName, program: r.program, high, med, total };
+  });
+
+  const maxVal  = Math.max(...data.map(d => d.total), 1);
+  const n       = data.length;
+  const svgH    = n * (BAR_H + ROW_GAP) + 8;
+
+  // Bar area width = 100% - NAME_W - VAL_W (computed at render time via JS, not SVG %)
+  const containerW = container.clientWidth || 900;
+  const BAR_W      = Math.max(containerW - NAME_W - VAL_W - 8, 200);
+
+  const rows = data.map((d, i) => {
+    const y         = i * (BAR_H + ROW_GAP);
+    const cy        = y + BAR_H / 2;
+    const totalPx   = (d.total / maxVal) * BAR_W;
+    const highPx    = (d.high  / maxVal) * BAR_W;
+    const medPx     = Math.max(0, totalPx - highPx);
+    const isOk      = d.total === 0;
+
+    // Stacked bar segments
+    const barHtml = isOk
+      ? `<rect x="0" y="${y}" width="${BAR_W}" height="${BAR_H}" rx="5" fill="#f0fdf4"/>
+         <text x="8" y="${cy+4}" font-size="11" font-weight="700" fill="#16a34a">✔ No gaps</text>`
+      : `<rect x="0" y="${y}" width="${BAR_W}" height="${BAR_H}" rx="5" fill="#f8fafc"/>
+         <rect x="0" y="${y}" width="${highPx}" height="${BAR_H}" rx="5" fill="#E24B4A"/>
+         <rect x="${highPx}" y="${y}" width="${medPx}" height="${BAR_H}" rx="${medPx > 6 ? 5 : 0}" fill="#EF9F27"/>
+         ${totalPx > 30 && d.high > 0 ? `<text x="${highPx/2}" y="${cy+4}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">${d.high}</text>` : ''}
+         ${totalPx > 30 && d.med > 0  ? `<text x="${highPx + medPx/2}" y="${cy+4}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">${d.med}</text>` : ''}`;
+
+    // Invisible hover target covering full row
+    const hoverRect = `<rect x="0" y="${y}" width="${BAR_W}" height="${BAR_H}" rx="5" fill="transparent" style="cursor:pointer"
+      data-name="${d.full}" data-prog="${d.program}" data-total="${d.total}" data-high="${d.high}" data-med="${d.med}"
+      class="hbar-hover"/>`;
+
+    return { y, cy, barHtml, hoverRect, d };
+  });
+
+  // ── Build SVG ──────────────────────────────────────────────────────────────
+  const svgBars = `<svg width="${BAR_W}" height="${svgH}" style="display:block;overflow:visible">
+    ${rows.map(r => r.barHtml).join('')}
+    ${rows.map(r => r.hoverRect).join('')}
+  </svg>`;
+
+  // ── Build name column ──────────────────────────────────────────────────────
+  const svgNames = `<svg width="${NAME_W}" height="${svgH}" style="display:block;overflow:visible">
+    ${rows.map(({y, cy, d}) => {
+      const name    = d.name.length > 38 ? d.name.substring(0, 36) + '…' : d.name;
+      const progClr = '#1e40af';
+      const progBg  = '#DBEAFE';
+      return `
+        <text x="${NAME_W - 10}" y="${cy - 5}" text-anchor="end" font-size="11" font-weight="600" fill="#374151">${name}</text>
+        <text x="${NAME_W - 10}" y="${cy + 9}" text-anchor="end" font-size="9.5" fill="#6b7280">${d.program}</text>`;
+    }).join('')}
+  </svg>`;
+
+  // ── Build value column ──────────────────────────────────────────────────────
+  const svgVals = `<svg width="${VAL_W}" height="${svgH}" style="display:block;overflow:visible">
+    ${rows.map(({y, cy, d}) => {
+      const color = d.total === 0 ? '#16a34a' : d.high > 0 ? '#E24B4A' : '#EF9F27';
+      return d.total > 0
+        ? `<text x="6" y="${cy+4}" font-size="11" font-weight="700" fill="${color}">${d.total}</text>`
+        : '';
+    }).join('')}
+  </svg>`;
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:0;width:100%">
+      <div style="flex-shrink:0">${svgNames}</div>
+      <div style="flex:1;min-width:0">${svgBars}</div>
+      <div style="flex-shrink:0">${svgVals}</div>
+    </div>`;
+
+  // ── Tooltip ────────────────────────────────────────────────────────────────
+  container.querySelectorAll('.hbar-hover').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      const d = e.target.dataset;
+      tooltip.innerHTML =
+        `<div style="font-weight:700;margin-bottom:3px">${d.name}</div>
+         <div>Program: <span style="color:#93c5fd">${d.prog}</span></div>
+         <div>Total gaps: <span style="color:#fbbf24">${d.total}</span></div>
+         <div>High: <span style="color:#fca5a5">${d.high}</span> &nbsp;·&nbsp; Medium: <span style="color:#fcd34d">${d.med}</span></div>`;
+      tooltip.style.display = 'block';
+    });
+    el.addEventListener('mousemove', e => {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top  = (e.clientY - 10) + 'px';
+    });
+    el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  });
+}
+
+
+function renderHistory() {
+  const container = document.getElementById('historySection');
+  if (!historyRuns.length) {
+    container.innerHTML = '<div class="empty" style="padding:24px">&#128202; No history yet — run the v8 script to generate history entries.</div>';
+    return;
+  }
+  const sorted = [...historyRuns].sort((a,b) => b.run - a.run);
+
+  // Summary totals for footer
+  const totalRuns   = sorted.length;
+  const avgComp     = Math.round(sorted.reduce((s,r) => s + (r.total ? r.comp/r.total*100 : 0), 0) / totalRuns);
+  const bestRun     = sorted.reduce((best, r) => (r.comp > best.comp ? r : best), sorted[0]);
+
+  const TH = (label, align='center', extra='') =>
+    `<th style="padding:11px 14px;text-align:${align};color:#fff;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #2E75B6;white-space:nowrap;background:#163d61;${extra}">${label}</th>`;
+
+  container.innerHTML = `
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <!-- Column group label row -->
+        <tr style="background:#163d61">
+          <td colspan="2" style="padding:6px 14px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-right:1px solid #2E75B6">Run Info</td>
+          <td colspan="4" style="padding:6px 14px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;text-align:center;border-right:1px solid #2E75B6">Compliance Metrics</td>
+          <td style="padding:6px 14px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">Details</td>
+        </tr>
+        <!-- Main header row -->
+        <tr style="background:#163d61">
+          ${TH('Run #','center','width:60px')}
+          ${TH('Date &amp; Time','left','min-width:160px')}
+          ${TH('Docs','center','width:60px')}
+          ${TH('&#10004; Compliant','center','width:100px')}
+          ${TH('&#9888; Review','center','width:90px')}
+          ${TH('Rate','center','width:70px')}
+          <th style="padding:11px 14px;text-align:left;color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map((r, i) => {
+          const rate    = r.total ? Math.round((r.comp / r.total) * 100) : 0;
+          const rateClr = rate >= 80 ? '#166534' : rate >= 50 ? '#92400e' : '#991b1b';
+          const rateBg  = rate >= 80 ? '#dcfce7' : rate >= 50 ? '#fef3c7' : '#fee2e2';
+          const bg      = i % 2 === 0 ? '#f8fafc' : '#ffffff';
+          const isLatest = i === 0;
+          return `<tr style="background:${bg};border-bottom:1px solid #e5e7eb${isLatest ? ';outline:2px solid #185FA5;outline-offset:-2px' : ''}">
+            <td style="padding:9px 14px;text-align:center;font-weight:700;color:#1F4E79;border-right:1px solid #f1f5f9">
+              ${r.run}${isLatest ? ' <span style="background:#185FA5;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700;vertical-align:middle">LATEST</span>' : ''}
+            </td>
+            <td style="padding:9px 14px;color:#374151;border-right:1px solid #f1f5f9;white-space:nowrap">${r.ts}</td>
+            <td style="padding:9px 14px;text-align:center;font-weight:600;color:#374151;border-right:1px solid #f1f5f9">${r.total}</td>
+            <td style="padding:9px 14px;text-align:center;border-right:1px solid #f1f5f9">
+              <span style="background:#dcfce7;color:#166534;padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px">${r.comp}</span>
+            </td>
+            <td style="padding:9px 14px;text-align:center;border-right:1px solid #f1f5f9">
+              <span style="background:${r.review > 0 ? '#fef3c7' : '#dcfce7'};color:${r.review > 0 ? '#92400e' : '#166534'};padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px">${r.review}</span>
+            </td>
+            <td style="padding:9px 14px;text-align:center;border-right:1px solid #f1f5f9">
+              <span style="background:${rateBg};color:${rateClr};padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px">${rate}%</span>
+            </td>
+            <td style="padding:9px 14px;color:#6b7280;font-size:11px">${r.notes||'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+      <!-- Summary footer -->
+      <tfoot>
+        <tr style="background:#f0f9ff;border-top:2px solid #185FA5">
+          <td colspan="2" style="padding:9px 14px;font-size:11px;font-weight:700;color:#1F4E79;border-right:1px solid #e2e8f0">
+            &#128202; ${totalRuns} run${totalRuns!==1?'s':''} recorded
+          </td>
+          <td style="padding:9px 14px;text-align:center;font-size:11px;font-weight:700;color:#374151;border-right:1px solid #e2e8f0">${sorted[0]?.total||0}</td>
+          <td colspan="2" style="padding:9px 14px;text-align:center;font-size:11px;font-weight:600;color:#374151;border-right:1px solid #e2e8f0">
+            Avg rate: <span style="color:#185FA5;font-weight:700">${avgComp}%</span>
+          </td>
+          <td style="padding:9px 14px;text-align:center;border-right:1px solid #e2e8f0">
+            <span style="background:${avgComp>=80?'#dcfce7':avgComp>=50?'#fef3c7':'#fee2e2'};color:${avgComp>=80?'#166534':avgComp>=50?'#92400e':'#991b1b'};padding:2px 10px;border-radius:10px;font-weight:700;font-size:11px">${avgComp}%</span>
+          </td>
+          <td style="padding:9px 14px;font-size:11px;color:#6b7280">Best run: #${bestRun.run} (${bestRun.total ? Math.round(bestRun.comp/bestRun.total*100) : 0}% compliant)</td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>`;
+}
+
+function renderGaps() {
+  const fg = filteredGaps();
+  document.getElementById('gapCount').textContent = `(${fg.length} items)`;
+  if (!fg.length) {
+    document.getElementById('gapBody').innerHTML = `<tr><td colspan="5" class="empty">&#10004; No gaps found for this selection.</td></tr>`;
+    return;
+  }
+  document.getElementById('gapBody').innerHTML = fg.map(g => {
+    const cls = g.severity === 'High' ? 'crit' : g.severity === 'Medium' ? 'high' : 'med';
+    return `<tr>
+      <td style="font-size:11px;max-width:200px;word-break:break-word">${g.docName}</td>
+      <td><span class="badge" style="background:#DBEAFE;color:#1e40af">${g.program}</span></td>
+      <td><span class="badge badge-${cls}">${g.severity}</span></td>
+      <td style="font-size:11px;font-weight:600">${g.gap}</td>
+      <td style="font-size:11px;color:#374151;line-height:1.5">${g.resolution}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══ ADMIN PANEL ══════════════════════════════════════════════════════════════
+function getGithubToken()  { return sessionStorage.getItem('catch_gh_token') || ''; }
+function setGithubToken(t) { sessionStorage.setItem('catch_gh_token', t.replace(/[\s\u00a0\u200b\ufeff]/g,'')); }
+function clearGithubToken(){ sessionStorage.removeItem('catch_gh_token'); }
+
+let adminUsers = [];
+
+function openAdmin() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  document.getElementById('adminOverlay').classList.add('open');
+  const stored = getGithubToken();
+  const statusEl = document.getElementById('tokenStatus');
+  if (statusEl) statusEl.textContent = stored ? '✔ Token set (' + stored.substring(0,8) + '...)' : '— not set';
+  document.getElementById('tokenInput').value = '';
+  loadAdminUsers();
+}
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
+
+function saveToken() {
+  const val = document.getElementById('tokenInput').value.trim();
+  if (!val) { showAdminStatus('Enter a token first.', 'err'); return; }
+  setGithubToken(val);
+  document.getElementById('tokenInput').value = '';
+  const el = document.getElementById('tokenStatus');
+  if (el) el.textContent = '✔ Token set (' + val.substring(0,8) + '...)';
+  showAdminStatus('&#10003; Token saved for this session.', 'ok');
+}
+function clearToken() {
+  clearGithubToken();
+  document.getElementById('tokenInput').value = '';
+  const el = document.getElementById('tokenStatus');
+  if (el) el.textContent = '— not set';
+  showAdminStatus('Token cleared.', 'ok');
+}
+
+async function loadAdminUsers() {
+  try { adminUsers = await fetchAccessList(); renderAdminTable(); }
+  catch(e) { adminUsers = [...EMBEDDED_USERS]; renderAdminTable(); }
+}
+
+function renderAdminTable() {
+  document.getElementById('adminUserTable').innerHTML = adminUsers.map((u,i) => `
+    <tr>
+      <td style="color:#9ca3af;font-size:11px">${u.RowCount||i+1}</td>
+      <td style="font-weight:600">${u.FirstName||''} ${u.LastName||''}</td>
+      <td style="font-size:12px;color:#374151">${u.EmailAddress||''}</td>
+      <td><select class="prog-select" onchange="updateField(${i},'Program',this.value)">
+        ${['ALL','GUIDE','Care Transitions','CHI/PIN','DPP'].map(p=>`<option value="${p}" ${(u.Program||'ALL')===p?'selected':''}>${p}</option>`).join('')}
+      </select></td>
+      <td><select class="prog-select" onchange="updateField(${i},'Role',this.value)">
+        <option value="user"  ${(u.Role||'user')==='user' ?'selected':''}>User</option>
+        <option value="admin" ${(u.Role||'user')==='admin'?'selected':''}>Admin</option>
+      </select></td>
+      <td><button class="del-btn" onclick="deleteUser(${i})">&#128465; Remove</button></td>
+    </tr>`).join('');
+}
+
+function updateField(idx, field, val) {
+  adminUsers[idx][field] = val;
+  showAdminStatus(`&#10003; ${field} changed — click Save Changes to apply.`, 'ok');
+}
+
+function deleteUser(idx) {
+  const u = adminUsers[idx];
+  if (!confirm(`Remove ${u.FirstName} ${u.LastName}?`)) return;
+  adminUsers.splice(idx,1);
+  adminUsers.forEach((u,i) => u.RowCount = i+1);
+  renderAdminTable();
+  showAdminStatus('User removed — click Save Changes to apply.', 'ok');
+}
+
+function addUser() {
+  const fn  = document.getElementById('newFirstName').value.trim();
+  const ln  = document.getElementById('newLastName').value.trim();
+  const em  = document.getElementById('newEmail').value.trim();
+  const prg = document.getElementById('newProgram').value;
+  const rol = document.getElementById('newRole').value;
+  if (!fn||!ln||!em) { showAdminStatus('Please fill in all fields.','err'); return; }
+  if (adminUsers.find(u=>u.EmailAddress.toLowerCase()===em.toLowerCase())) { showAdminStatus('Email already exists.','err'); return; }
+  adminUsers.push({RowCount:adminUsers.length+1,FirstName:fn,LastName:ln,EmailAddress:em,Program:prg,Role:rol});
+  renderAdminTable();
+  document.getElementById('newFirstName').value='';
+  document.getElementById('newLastName').value='';
+  document.getElementById('newEmail').value='';
+  showAdminStatus('User added — click Save Changes to apply.','ok');
+}
+
+async function saveToGitHub() {
+  const token = getGithubToken();
+  if (!token) { showAdminStatus('&#10007; Set your Source token first.','err'); return; }
+  const btn = document.getElementById('saveGithubBtn');
+  btn.disabled=true; btn.innerHTML='Saving...';
+  try {
+    const jsonStr = JSON.stringify(adminUsers,null,2);
+    const wbout   = btoa(unescape(encodeURIComponent(jsonStr)));
+    const getResp = await fetch(GITHUB_API_URL,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});
+    let sha = null;
+    if (getResp.ok) { const d = await getResp.json(); sha = d.sha; }
+    const payload = {message:'Access list updated via Admin Panel — '+new Date().toLocaleString(),content:wbout};
+    if (sha) payload.sha = sha;
+    const putResp = await fetch(GITHUB_API_URL,{method:'PUT',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(payload)});
+    if (!putResp.ok) { const e=await putResp.json(); throw new Error(e.message||putResp.status); }
+    EMBEDDED_USERS = adminUsers;
+    showAdminStatus('&#10003; Saved to Source successfully!','ok');
+  } catch(e) {
+    showAdminStatus('&#10007; '+e.message,'err');
+  } finally {
+    btn.disabled=false; btn.innerHTML='&#128190; Save Changes';
+  }
+}
+
+async function refreshPermissions() {
+  showAdminStatus('Refreshing from Source…','ok');
+  const token = getGithubToken();
+  try {
+    let rows;
+    if (token) {
+      const r = await fetch(ACCESS_JSON_API,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});
+      if (!r.ok) { const e=await r.json(); throw new Error(e.message||r.status); }
+      const d = await r.json();
+      rows = JSON.parse(atob(d.content.replace(/\n/g,'')));
+    } else {
+      const r = await fetch(ACCESS_JSON_URL+'?t='+Date.now(),{cache:'no-store'});
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      rows = await r.json();
+    }
+    adminUsers = rows; EMBEDDED_USERS = rows;
+    renderAdminTable();
+    if (currentUser) {
+      const updated = rows.find(r=>String(r.EmailAddress||'').trim().toLowerCase()===currentUser.email);
+      if (updated) { currentUser.program=String(updated.Program||'ALL').trim().toUpperCase(); updateUserBadge(currentUser); }
+    }
+    showAdminStatus('&#10003; Permissions refreshed from Source.','ok');
+  } catch(e) { showAdminStatus('&#10007; '+e.message,'err'); }
+}
+
+function showAdminStatus(msg, type) {
+  const el = document.getElementById('adminStatus');
+  el.innerHTML = msg; el.className = 'admin-status '+type; el.style.display = 'block';
+}
+
+// ══ EXPORT ═══════════════════════════════════════════════════════════════════
+async function exportExcel() {
+  const btn = document.getElementById('exportBtn');
+  btn.disabled=true; btn.innerHTML='Generating...';
+  try {
+    const fg    = filteredGaps();
+    const label = effectiveProg() === 'All' ? 'All Programs' : effectiveProg();
+    const wb    = new ExcelJS.Workbook();
+    const ws    = wb.addWorksheet('Compliance Gaps');
+    ws.mergeCells('A1:E1');
+    const tc = ws.getCell('A1');
+    tc.value = `CATCH Greater Houston – Compliance Gaps (${label})`;
+    tc.font  = {name:'Arial',bold:true,size:13,color:{argb:'FFFFFFFF'}};
+    tc.fill  = {type:'pattern',pattern:'solid',fgColor:{argb:'FF1F4E79'}};
+    tc.alignment = {horizontal:'center',vertical:'middle'};
+    ws.getRow(1).height = 28;
+    const hr = ws.addRow(['Document Name','Program','Severity','Gap Category','Resolution']);
+    hr.eachCell(c=>{c.font={name:'Arial',bold:true,size:10,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1F4E79'}};c.alignment={horizontal:'center',vertical:'middle',wrapText:true};});
+    ws.getRow(2).height=25; ws.columns=[{width:45},{width:14},{width:12},{width:35},{width:70}];
+    fg.forEach((g,i)=>{
+      const row=ws.addRow([g.docName,g.program,g.severity,g.gap,g.resolution]); row.height=38;
+      const bg = i%2===0?'FFD6E4F0':'FFFFFFFF';
+      const sevFill = g.severity==='High'?'FFFCE4D6':g.severity==='Medium'?'FFFAEEDA':'FFEAF3DE';
+      row.eachCell((c,ci)=>{
+        c.alignment={vertical:'middle',wrapText:true};
+        c.border={bottom:{style:'thin',color:{argb:'FFBFBFBF'}}};
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:ci===3?sevFill:bg}};
+        c.font={name:'Arial',size:10};
+      });
+    });
+    ws.views=[{state:'frozen',ySplit:2}];
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href=url; a.download=`CATCH_Compliance_Gaps_${label.replace(/ /g,'_')}.xlsx`; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { alert('Export failed: '+e.message); }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-download"></i> Export to Excel';
+}
+</script>
+
+<script>
+function switchDashTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.dash-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tabPanel-' + name).classList.add('active');
+  document.getElementById('tabBtn-' + name).classList.add('active');
+}
+</script>
+<script>
+const REM_ITEMS = [{"sn": "1", "question": "Do you use an electronic medical record (EMR) or Electronic Health Record (EHR) system to support the services being provided? If yes, provide the name of the tools used. If no EMR/EHR is used, please explain why.", "owner": "Yes, Healthie", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "199", "question": "Provide a data flow diagram that illustrates the directional flow of data between Vendor, your organization, and any third parties you use to support your service (inclusive of Cloud Service Providers).", "owner": "Upload into sharepoint", "action": "Build and finalize the data flow diagram (Vendor ↔ CATCH ↔ Cumulus ↔ Healthie ↔ subcontractors) and upload to SharePoint.", "duration": "4 hours", "cost": 480, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "601", "question": "How will Vendor data be shared? (e.g., API – OAuth 1.0/2.0/Basic/Token/Key, Citrix, Vendor-provided devices, Direct/VPN, Email, Fax, File sharing, non-vendor resources, Paper, Physical media, Secure FTP, Web-based, Other)", "owner": "API integration between Cumulus and Healthie EHR; secure emails, secure e-fax", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "28", "question": "Do you use or plan to use external internet web sites for file storage for the sharing of information related to the service you are providing to Vendor (e.g., box.com, Kiteworks, Sharefile.com)? If yes, list the sites in the comments section.", "owner": "No, we do not plan to use external internet websites, however, we do use intranet (i.e. Cumulus, Healthie)", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "119", "question": "Do you or will you share any network infrastructure and/or network connectivity that is accessible and/or available outside of the continental USA? If yes, list the countries in the comments section.", "owner": "No, we will not share any network infrastructure and/or network connectivity that is accessible and/or available outside of the continental USA.", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "175", "question": "Is your company the subject of any active criminal investigations or regulatory sanctions initiated by a governmental agency within or outside the United States? If yes, explain in the comments section.", "owner": "No, we are not the subject of any active criminal investigations or regulatory sanctions initiated by a governmental agency within or outside the United States .", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "288", "question": "Will your organization communicate via printed mailing to any Vendor member or employee? If yes, describe the communication in the comments section.", "owner": "No, every communication with any Vendor member will be digital.", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "289", "question": "Where is Vendor data stored? Please indicate whether data is in your data center, a colocation center, your cloud, a public cloud, etc.", "owner": "Vendor data will be stored in Cumulus [which is an internal repository].", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "290", "question": "Security Scorecard: If there are high or above risk issues identified in your Security Scorecard profile, attach responses/remediation plan and confirm you have responded to the issues directly within the tool. Do any identified issues affect systems in scope for Vendor?", "owner": "We have created a compliance dashboard and currently there are no identified issues that affect systems in scope for Vendor.", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "586", "question": "Will your organization be hosting a web-facing application or website for Vendor? If so, please provide the URL or IP address.", "owner": "No, we will not host a web-facing application or website.", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "999", "question": "Please list all applications in scope. For each application, list their use cases as well as their URL(s).", "owner": "Cumulus Care and Healthie", "action": "Compile the full application inventory (Cumulus and Healthie use cases and URLs) into a single document/SharePoint upload.", "duration": "3 hours", "cost": 360, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "602", "question": "Do you have controls in place to protect your external APIs from Distributed Denial-of-Service (DDoS) attacks? Controls should include one or more of the following: Rate Limiting, IP whitelisting, Blacklisting, Bot detection system.", "owner": "For Cumulus portion of response: Yes. Cumulus APIs include DDoS protections, Web Application Firewall (WAF) controls, rate limiting, IP filtering, automated threat detection, and monitoring of suspicious traffic patterns., Jim", "action": "Request and document Healthie's DDoS/WAF control evidence to pair with the existing Cumulus documentation.", "duration": "3 hours", "cost": 360, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "2", "question": "Does your company develop custom software and/or mobile applications that will process, transmit, access, or store Vendor data? Custom software refers to anything that is not out of the box and is maintained or developed by your organization. If yes, provide the names of the applications/software developed in the comments section.", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "21", "question": "Are user activities, including root, administrative, and operator activities, logged and regularly reviewed for systems hosting/processing your customers' data?", "owner": "For Cumulus portion of response: Yes. CATCH utilizes Cumulus user logs and user login reports to monitor staff usage. This includes records created, viewed, edited, and deleted., Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "22", "question": "Does your company have security incident/breach detection enabled in accordance with security best practices, and configured to allow detection and audit of all suspicious or abnormal activity?", "owner": "Yes. CATCH has security incident and breach detection controls in place for the systems and processes it manages, including [CATCH to describe internal monitoring, logging, endpoint protection, email/security tools, access review, and incident response processes]., For the Cumulus component of the solution, Cumulus maintains application activity and audit logs, monitors production systems for security-relevant events, restricts administrative access through access control and MFA, and retains logs to support investigation and audit of suspicious or abnormal activity., For the Healthie component of the solution, [Healthie/CATCH to describe Healthie’s security monitoring, audit logging, breach detection, administrative access controls, incident response process, and log retention]., Together, these controls are intended to support detection, investigation, and audit of suspicious or abnormal activity across the systems used for this program., Jim", "action": "Obtain and document Healthie's incident/breach detection controls to complete the joint response.", "duration": "4 hours", "cost": 480, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "203", "question": "Provide a copy of your policy on audit logging and monitoring. Also provide evidence that the policy is reviewed/updated annually.", "owner": "Tom, Jim", "action": "Gather audit logging & monitoring policy document plus evidence of annual review for submission.", "duration": "3 hours", "cost": 360, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "204", "question": "Provide evidence that logs are regularly monitored and reviewed, real-time alerts are generated, and alerts are acted upon. Acceptable evidence: screen print of recent log review or sample alert with associated ticket generation.", "owner": "Tom, Jim", "action": "Capture and package evidence of log review/alerting (screenshots or sample ticket) for submission.", "duration": "3 hours", "cost": 360, "status": "Pending", "category": "Vendor Contracts"}, {"sn": "603", "question": "Provide evidence of your network-based IDS and/or IPS dashboard and a generated alert. Acceptable evidence: screen print of recent Network-based IDS/IPS log alerts, tools or dashboard screenshot showing it's enabled and configured, or sample alert with associated ticket generation.", "owner": "Tom, Jim", "action": "Obtain network-based IDS/IPS dashboard evidence and a sample alert from Cumulus/Healthie hosting.", "duration": "4 hours", "cost": 480, "status": "Pending", "category": "Vendor Contracts"}, {"sn": "588", "question": "Do you have a documented and approved Asset Management Policy? If no, explain in the comments section how expectations are made clear to employees regarding the lifecycle of assets.", "owner": "Upload into sharepoint", "action": "Upload existing Asset Management Policy to SharePoint.", "duration": "1 hour", "cost": 120, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "17", "question": "Is there a Hardware and Digital Media Disposal Policy, including reuse procedures? Policy should include disposal of equipment and/or physical media (e.g., paper documents, CDs, DVDs, tapes, disk drives). If not, explain how you ensure hardware and digital media are disposed of properly.", "owner": "Upload into sharepoint", "action": "Upload existing Hardware and Digital Media Disposal Policy to SharePoint.", "duration": "1 hour", "cost": 120, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "29", "question": "Do you utilize cloud technologies to support the service being provided to Vendor? If yes, please indicate the cloud service model(s) used in the comments section.", "owner": "For Cumulus portion of response: Yes. CATCH utilizes Cumulus to support services provided to Vendor. The platform utilizes a Software-as-a-Service (SaaS) delivery model., Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "123", "question": "Does your company use only sanitized or anonymized data to ensure masking or removal of all personal or confidential company information before using it in non-production environments?", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "125", "question": "Is there a documented/implemented process for securing and hardening servers, databases, applications and network devices that address minimum system hardening requirements (CIS or OEM security configuration guidance)?", "owner": "Tom, Jim", "action": "Document hardening/CIS-alignment evidence from Cumulus and Healthie as SaaS providers.", "duration": "4 hours", "cost": 480, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "136", "question": "Are backups of Vendor data and activity logs performed?", "owner": "For Cumulus portion of response: Yes. For data stored in Cumulus, backups are automatic. Transaction log backups are performed approximately every 10 minutes, differential backups every 24 hours, and full backups weekly. Point-in-time recovery backups are retained for 7 days; long-term backups are retained weekly for 52 weeks and monthly/yearly for up to 10 years. Backups are encrypted at rest, and restore testing is performed monthly or more frequently., Jim", "action": "Confirm and document Healthie's backup schedule and retention to pair with existing Cumulus backup documentation.", "duration": "3 hours", "cost": 360, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "144", "question": "Is there a Patch Management Policy?", "owner": "Tom, Jim", "action": "Provide copy of existing Patch Management Policy for submission.", "duration": "1 hour", "cost": 120, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "594", "question": "Are patches tested in a non-production environment prior to migrating them to production?", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "50-ALL", "question": "Within the last 24 months, has an onsite independent external third party risk assessment been conducted of all locations providing services to Vendor (e.g., SOC II Type 2, HITRUST, TruSight, DirectTrust, ISO 27001)? If yes, provide a copy of the most recent full report.", "owner": "CATCH should have its own third-party review of risk assessment; we are doing it now with these questions", "action": "Engage an independent third-party assessor (SOC 2 Type II or HITRUST) and complete the assessment; internal hours reflect scoping, coordination, and evidence-gathering (external assessor fees are separate and not included in this estimate).", "duration": "40 hours", "cost": 4800, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "51-ALL", "question": "Within the last 12 months, has an external network penetration test been conducted by an independent party? If yes, provide a summary including date, scope, and number of issues by severity (with remediation evidence if high/above items were identified).", "owner": "See above", "action": "Engage an independent firm to perform an external network penetration test and issue a report; internal hours reflect scoping, coordination, and remediation tracking (external vendor fees are separate).", "duration": "16 hours", "cost": 1920, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "52-ALL", "question": "Are internal network vulnerability scans performed on the environment supporting Vendor? If yes, provide a summary of your most recent internal scan including date, scope, and number of issues by severity (with remediation evidence if high/above items were identified).", "owner": "Tom, Jim", "action": "Stand up a recurring internal vulnerability scanning process for the Vendor-supporting environment and run/document the first scan.", "duration": "24 hours", "cost": 2880, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "53-ALL", "question": "Does your company require vulnerability assessments of new entities during a merger or acquisition event?", "owner": "We do not but will begin implementing policy to assess vulnerabilities of all new entities.", "action": "Draft and implement a policy requiring vulnerability assessments of new entities during M&A events.", "duration": "6 hours", "cost": 720, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "54", "question": "Do you store, process or otherwise have access to full or partial credit or debit card information? Or, if you have been identified as a third party on Vendor's PCI Service Provider List, please respond 'yes'. If yes, indicate whether you are using your Merchant ID or the Vendor Merchant ID.", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "55", "question": "Have you received a Payment Card Industry (PCI) Attestation of Compliance (AOC)?", "owner": "Tom, Jim", "action": "Not applicable – no action required.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "218", "question": "Provide a copy of the last four PCI Approved Scanning Vendor (ASV) scan reports.", "owner": "Tom, Jim", "action": "Not applicable – no action required.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "317", "question": "Provide a PCI controls responsibility matrix listing all PCI DSS Requirements (including sub-requirements) indicating third party, Vendor, and shared responsibilities. Do you acknowledge your obligation to maintain PCI compliance while doing business with Vendor?", "owner": "Tom, Jim", "action": "Not applicable – no action required.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "176", "question": "Is there a risk management program in place to identify and quantify risks to ensure the protection of sensitive data, as required by relevant legislation, regulations, or contractual obligations?", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "597", "question": "Does your risk management program require your company to conduct an annual risk assessment?", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "178", "question": "Does your company have an annually updated Information Security Policy which addresses new vulnerabilities, gaps and changes when applicable? If yes, provide evidence of the policy and that it is reviewed at least annually.", "owner": "Tom, Jim", "action": "Compile evidence of Information Security Policy and its annual review for submission.", "duration": "2 hours", "cost": 240, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "56", "question": "Does your company have documented, approved, and established Business Continuity and Disaster Recovery (BCDR) programs that have been approved by management and communicated to appropriate constituents? If yes, provide evidence of your Business Continuity Policy/Plan and that the policy is reviewed/updated annually.", "owner": "Will upload to sharepoint", "action": "Upload BCDR Policy/Plan and evidence of annual review to SharePoint.", "duration": "2 hours", "cost": 240, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "45", "question": "Do you have malware containment and resolution procedures that require isolation of infected systems where deemed appropriate, and are inclusive of mobile devices?", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "46", "question": "Does your company have an updated anti-virus solution installed? If yes, indicate frequency of updates in the comments section.", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "49", "question": "Does your company have technical controls in place to restrict installation of non-approved software on company-owned workstations to administrators?", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "270", "question": "Does your company have a Host endpoint protection solution in place? Acceptable evidence: screen print of recent Host-based IDS/IPS log alerts, tools or dashboard screenshot, or sample alert with associated ticket generation.", "owner": "Tom, Jim", "action": "Capture host-based endpoint protection dashboard/alert evidence for submission.", "duration": "1 hour", "cost": 120, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "111", "question": "Is there a DMZ environment within the network that transmits, processes, or stores Vendor data?", "owner": "Cumulus: Proposed response from CATCH:, No. Vendor data is not transmitted, processed, or stored within a customer-managed DMZ environment. Authorized users access HEALTHIE and Cumulus applications over encrypted HTTPS/TLS connections. Vendor data is processed and stored within the hosted application environment, not within the customer’s local network or DMZ., Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "113", "question": "Does your company configure network devices to prevent communications from unapproved networks (e.g., deny all access by default, and allow only the minimum communication necessary to support business and security objectives)?", "owner": "Tom, Jim", "action": "Document CATCH's internal network device configuration (deny-all-by-default) and clarify scope relative to the Cumulus/Healthie hosted environment.", "duration": "3 hours", "cost": 360, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "304", "question": "Is a network-based intrusion detection/prevention system (IDS/IPS) deployed that monitors all network traffic, so that any suspected security events are reviewed and resolved as necessary?", "owner": "Tom, Jim", "action": "Document CATCH's network-based IDS/IPS coverage and confirm/obtain corresponding evidence from Cumulus and Healthie.", "duration": "3 hours", "cost": 360, "status": "Incomplete", "category": "Vendor Contracts"}, {"sn": "821", "question": "Do you currently have BotNet defense controls in place? If yes, provide evidence of BotNet defense controls.", "owner": "Tom, Jim", "action": "Confirm and document BotNet defense evidence from Cumulus and Healthie (WAF, DDoS, threat detection).", "duration": "3 hours", "cost": 360, "status": "Pending", "category": "Vendor Contracts"}, {"sn": "62", "question": "Is there an Encryption policy in place that meets or exceeds a defined industry standard, including FIPS compliant encryption methods and covers key management? If yes, provide a copy of your Encryption Policy covering data in transit, data at rest, and encryption key management, with evidence it is reviewed/updated annually.", "owner": "Cumulus: It is recommended that CATCH include their network encryption policy., Jim", "action": "Finalize and formally adopt CATCH's Encryption Policy (data in transit, at rest, and key management), incorporating Cumulus's referenced standards, and schedule the first annual review.", "duration": "8 hours", "cost": 960, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "590", "question": "Is logical access to systems hosting/accessing Vendor data based on least privilege and approved by management?", "owner": "Cumulus: It is recommended that CATCH respond affirmatively, outlining the process they follow for provisioning access to in-scope systems (Cumulus and Healthie). This is a standard HIPAA control., Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "73", "question": "Is multi-factor authentication (MFA) or adaptive authentication required for remote access into your company's environment? If yes, provide evidence of MFA implementation for systems/networks used to process or transmit Vendor data. If no, explain why this isn't in place.", "owner": "Cumulus: It is recommended CATCH respond with something like:, Yes, multi-factor authentication is required for access to in-scope systems. The Cumulus application requires MFA for all logins, it is not possible to turn MFA off. For Healthie .. (add details here about Healthie functionality)., Jim", "action": "Document Healthie's MFA implementation details and evidence to pair with the existing Cumulus MFA confirmation.", "duration": "3 hours", "cost": 360, "status": "Pending", "category": "Vendor Contracts"}, {"sn": "291", "question": "If you are providing web-based applications or portals to end users, provide evidence of MFA or adaptive authentication to access.", "owner": "Cumulus: For CATCH – you can find information on the mfa setup process in Cumulus from this link (you can also grab MFA management screenshots by clicking your account avatar in bottom left of Cumulus-->Edit profile & account-->Account-->Manage MFA):, https://cumulus.care/public-docs/mfa-setup, Jim", "action": "Compile MFA setup evidence/screenshots (Cumulus and Healthie) for submission.", "duration": "2 hours", "cost": 240, "status": "Pending", "category": "Vendor Contracts"}, {"sn": "86", "question": "Does your company maintain procedures for provisioning and tracking privileged accounts that includes, at minimum, quarterly reviews to ensure access is still necessary? If yes, provide evidence of quarterly access reviews for privileged/administrative accounts.", "owner": "We need to create this policy", "action": "Draft and implement a documented quarterly privileged/administrative account review procedure; complete first review cycle.", "duration": "8 hours", "cost": 960, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "88", "question": "Are strong passwords enforced for systems storing, processing, or transmitting Vendor data (inclusive of cloud environments)? Requirements: 12-character minimum, password history (last 4), max age 90 days, complexity rules, account lockout at 5 attempts. If yes, provide evidence of Password and Account Lockout Policy settings.", "owner": "For Cumulus portion of response: Cumulus enforces strong password requirements, including minimum password length, complexity requirements, password reuse prevention, breached password detection, and account lockout following repeated failed authentication attempts. However, Cumulus does not require routine password expiration (e.g., every 90 days), as current security guidance, including NIST recommendations, discourages periodic password changes absent evidence of credential compromise. Password changes are required when credentials are reset or if compromise is suspected. Multi-factor authentication is required for all logins., Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "38", "question": "Do applications (inclusive of mobile apps) force an automatic session timeout after 15 minutes of inactivity? If yes, attach evidence of the configuration. If no, explain why this isn't in place.", "owner": "For Cumulus portion of response: Yes. User sessions automatically expire after a period of inactivity (60 minutes)., Jim", "action": "Evaluate configuring a 15-minute inactivity session timeout in Cumulus (currently 60 minutes) or document an approved compensating control.", "duration": "4 hours", "cost": 480, "status": "Pending", "category": "Vendor Contracts"}, {"sn": "90", "question": "Are standard user accounts annually reviewed to ensure user access and authorization is still appropriate and granted to those with a business need?", "owner": "Brandi and Janice", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "95", "question": "Does your company have security incident response planning and notification procedures to monitor, react, notify, and investigate any incident related to customer assets? Inclusive of all locations in support of services provided to Vendor.", "owner": "We do have an Incident Response Policy document, but the notification procedures are still being implemented.", "action": "Finalize incident notification procedures within the Incident Response Policy prior to production go-live.", "duration": "6 hours", "cost": 720, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "97", "question": "Are incident management procedures tested at least annually?", "owner": "No, but scheduled to be implemented in our next development phase.", "action": "Schedule and conduct the first incident response tabletop exercise/test.", "duration": "8 hours", "cost": 960, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "228", "question": "Provide your Incident Response Policy. Acceptable evidence includes the IR policy with documented IR procedures.", "owner": "Upload to sharepoint", "action": "Upload Incident Response Policy to SharePoint.", "duration": "1 hour", "cost": 120, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "619", "question": "Provide evidence that management has conducted an incident response exercise/activity within the last 12 months. Acceptable evidence: screenshot of repository housing completed exercises, an IR test schedule, or a documented exercise with execution date.", "owner": "Scheduled to be implemented in our next development phase.", "action": "Document and package evidence of the completed incident response exercise (schedule, execution date, results).", "duration": "4 hours", "cost": 480, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "100", "question": "Are mobile computing devices (personal or corporate) allowed to access non-public Vendor systems or data (e.g., mobile phones, tablets)?", "owner": "No, we will not use mobile computing", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "102", "question": "Is there a mobile computing policy in place that meets or exceeds industry standard? Inclusive of company owned devices and BYOD if applicable.", "owner": "Tom, Jim", "action": "Not applicable – no action required.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "103", "question": "Do you have a policy or procedure requiring employees to maintain the latest updates on their mobile computing devices that access or store Vendor health data at rest? Inclusive of company owned devices and BYOD if applicable.", "owner": "Tom, Jim", "action": "Not applicable – no action required.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "104", "question": "Does your company manage mobile computing devices via a Mobile Device Management (MDM) tool or similar program? If yes, indicate whether the solution is internally or vendor managed in the comments section.", "owner": "Tom, Jim", "action": "Not applicable – no action required.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "105", "question": "Are the following requirements in place on mobile computing devices: minimum 4-character password/PIN, auto-delete or lock after 10 unsuccessful attempts, prohibition on jailbreaking/tampering? If yes, provide evidence of your Mobile Computing Device Password Policy.", "owner": "Tom, Jim", "action": "Not applicable – no action required.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "106", "question": "If mobile computing devices are lost, stolen, or breached, can they be remotely wiped, blocked, or bricked? Inclusive of company owned devices and BYOD if applicable.", "owner": "Tom, Jim", "action": "Not applicable – no action required.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "1005", "question": "Does your company prohibit rooting and jailbreaking of company owned devices as well as send an alert to cybersecurity personnel if rooting or jailbreaking of a device has been detected?", "owner": "Tom, Jim", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "153", "question": "Does your company's security awareness and training program document and ensure that all employees and contract workers have completed program requirements?", "owner": "CATCH*", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "154", "question": "Does your company require background checks on all employees, including criminal, academic, work history, and a drug test, while ensuring compliance with all relevant legal and ethical requirements? Inclusive of all employees/locations providing services to Vendor.", "owner": "CATCH*", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "311", "question": "Does your company perform security awareness training which includes phishing?", "owner": "CATCH*", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "618", "question": "Does your company perform phishing campaigns?", "owner": "CATCH*", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "306", "question": "Does your company have a physical office from where services are provided to Vendor?", "owner": "Yes, our physical office is located at 190 Heights Blvd., Houston, TX, 77007.", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "156", "question": "Does your company restrict access to buildings or areas where data is stored, transmitted, or processed based on role and only to authorized personnel (e.g., call centers, warehouses, loading docks, shredding facilities, data centers)?", "owner": "CATCH*", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "193", "question": "Does your company use third parties (e.g., subcontractors, affiliates, suppliers, or cloud service providers) to fulfill service requirements to Vendor?", "owner": "CATCH*", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "572", "question": "Does your company use any Third Parties for services provided to Vendor (i.e., Vendor's fourth parties)?", "owner": "CATCH", "action": "No action required – existing controls satisfy this requirement.", "duration": "N/A", "cost": 0, "status": "Completed", "category": "Vendor Contracts"}, {"sn": "WT-1", "question": "Inventory all domain, DNS, hosting, and email accounts currently registered/managed under SMART IT.", "owner": "CMC IT", "action": "Compile a full inventory of the domain registrar account, DNS records, web hosting account, and all email mailboxes/aliases currently owned or managed by SMART IT.", "duration": "2 hours", "cost": 240, "status": "Pending", "category": "Website Transfer"}, {"sn": "WT-2", "question": "Obtain domain registrar access and the EPP/authorization code from SMART IT to enable transfer.", "owner": "CMC IT", "action": "Request registrar login access or the EPP/auth code needed to initiate a domain transfer, and confirm the domain is unlocked and eligible for transfer.", "duration": "1 hour", "cost": 120, "status": "Pending", "category": "Website Transfer"}, {"sn": "WT-3", "question": "Document all existing DNS records (A, MX, TXT, CNAME) before the transfer begins.", "owner": "CMC IT", "action": "Export and document all existing DNS records so nothing is lost or broken during the transfer.", "duration": "1 hour", "cost": 120, "status": "Pending", "category": "Website Transfer"}, {"sn": "WT-4", "question": "Initiate the domain transfer to a CMC-controlled registrar account.", "owner": "CMC IT", "action": "Submit the domain transfer request to move registration to a CMC-owned registrar account and approve the resulting confirmation emails.", "duration": "1 hour", "cost": 120, "status": "Pending", "category": "Website Transfer"}, {"sn": "WT-5", "question": "Provision website hosting under CMC and migrate the site files/content.", "owner": "CMC IT", "action": "Set up hosting under CMC ownership and migrate the website files and content from SMART IT's hosting environment.", "duration": "4 hours", "cost": 480, "status": "Pending", "category": "Website Transfer"}, {"sn": "WT-6", "question": "Provision email hosting/mailboxes under CMC and migrate existing mailbox data.", "owner": "CMC IT", "action": "Set up new email accounts under CMC's ownership and migrate historical mail, contacts, and calendars from the SMART IT-managed accounts.", "duration": "6 hours", "cost": 720, "status": "Pending", "category": "Website Transfer"}, {"sn": "WT-7", "question": "Update DNS records (MX, SPF, DKIM, DMARC) to point to the new CMC-owned email and hosting.", "owner": "CMC IT", "action": "Repoint DNS so email and website traffic route to CMC-controlled infrastructure, and verify mail deliverability after the change.", "duration": "2 hours", "cost": 240, "status": "Pending", "category": "Website Transfer"}, {"sn": "WT-8", "question": "Confirm ownership transfer is complete and revoke SMART IT's administrative access.", "owner": "CMC IT", "action": "Verify domain, hosting, and email ownership/admin rights are fully transferred to CMC, then remove SMART IT's remaining access.", "duration": "1 hour", "cost": 120, "status": "Pending", "category": "Website Transfer"}, {"sn": "WT-9", "question": "Notify stakeholders of the completed transfer and any updated contact information or downtime window.", "owner": "CMC IT", "action": "Communicate the transition to staff and partners, including any temporary downtime experienced and updated email/website details.", "duration": "1 hour", "cost": 120, "status": "Pending", "category": "Website Transfer"}];
+
+const remFmtCost = n => '$' + n.toLocaleString('en-US');
+
+function remPopulateCategoryFilter() {
+  const sel = document.getElementById('remCategoryFilter');
+  const cats = Array.from(new Set(REM_ITEMS.map(it => it.category || 'Uncategorized'))).sort();
+  cats.forEach(cat => {
+    if (sel.querySelector(`option[value="${CSS.escape(cat)}"]`)) return;
+    const opt = document.createElement('option');
+    opt.value = cat; opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+}
+
+function remGetFilters() {
+  return {
+    query: document.getElementById('remSearchBox').value.trim().toLowerCase(),
+    statusVal: document.getElementById('remStatusFilter').value,
+    categoryVal: document.getElementById('remCategoryFilter').value,
+    hideZero: document.getElementById('remHideZeroCost').checked,
+  };
+}
+
+function remMatchesFilters(it, filters) {
+  const { query, statusVal, categoryVal, hideZero } = filters;
+  if (statusVal !== 'All' && it.status !== statusVal) return false;
+  if (categoryVal !== 'All' && (it.category || 'Uncategorized') !== categoryVal) return false;
+  if (hideZero && it.cost === 0) return false;
+  if (!query) return true;
+  return it.sn.toLowerCase().includes(query) ||
+         it.question.toLowerCase().includes(query) ||
+         it.owner.toLowerCase().includes(query) ||
+         it.action.toLowerCase().includes(query) ||
+         (it.category || '').toLowerCase().includes(query);
+}
+
+function remGetFilteredItems() {
+  const filters = remGetFilters();
+  return REM_ITEMS.filter(it => remMatchesFilters(it, filters));
+}
+
+function remIsFilterActive() {
+  const { query, statusVal, categoryVal, hideZero } = remGetFilters();
+  return !!query || statusVal !== 'All' || categoryVal !== 'All' || hideZero;
+}
+
+function remComputeStats(items) {
+  const stats = { Completed: {count:0, cost:0}, Pending: {count:0, cost:0}, Incomplete: {count:0, cost:0} };
+  let totalCost = 0;
+  items.forEach(it => {
+    stats[it.status].count += 1;
+    stats[it.status].cost += it.cost;
+    totalCost += it.cost;
+  });
+  return { stats, total: items.length, totalCost };
+}
+
+function remRenderTiles() {
+  const filtered = remGetFilteredItems();
+  const filterActive = remIsFilterActive();
+  const { stats, total, totalCost } = remComputeStats(filtered);
+
+  document.getElementById('remTileTotalCount').innerHTML = total + '<span class="unit">items</span>';
+  document.getElementById('remTileTotalCost').textContent = remFmtCost(totalCost) + ' total est. cost';
+  document.getElementById('remTileTotalNote').textContent = filterActive ? `of ${REM_ITEMS.length} total` : '';
+
+  ['Completed','Pending','Incomplete'].forEach(key => {
+    const s = stats[key];
+    const pct = total ? Math.round((s.count/total)*100) : 0;
+    document.getElementById('remTile'+key+'Count').innerHTML = s.count + '<span class="unit">items</span>';
+    document.getElementById('remTile'+key+'Cost').textContent = remFmtCost(s.cost);
+    document.getElementById('remTile'+key+'Pct').textContent = pct + '% of ' + (filterActive ? 'shown' : 'items');
+  });
+
+  // meter
+  const cCount = stats.Completed.count, pCount = stats.Pending.count, iCount = stats.Incomplete.count;
+  const cPct = total ? (cCount/total*100) : 0;
+  const pPct = total ? (pCount/total*100) : 0;
+  const iPct = total ? (iCount/total*100) : 0;
+  document.getElementById('remSegCompleted').style.width = cPct + '%';
+  document.getElementById('remSegPending').style.width = pPct + '%';
+  document.getElementById('remSegIncomplete').style.width = iPct + '%';
+  document.getElementById('remLegCompleted').textContent = `Completed — ${cCount} (${Math.round(cPct)}%)`;
+  document.getElementById('remLegPending').textContent = `Pending — ${pCount} (${Math.round(pPct)}%)`;
+  document.getElementById('remLegIncomplete').textContent = `Incomplete — ${iCount} (${Math.round(iPct)}%)`;
+  document.getElementById('remMeterSummary').textContent = filterActive
+    ? `${cCount} of ${total} shown items complete`
+    : `${cCount} of ${total} items complete`;
+}
+
+function remRenderTable() {
+  const filtered = remGetFilteredItems();
+  const filteredSet = new Set(filtered);
+  const tbody = document.getElementById('remTableBody');
+  tbody.innerHTML = '';
+  let shown = 0;
+  let shownCost = 0;
+
+  REM_ITEMS.forEach((it, idx) => {
+    if (!filteredSet.has(it)) return;
+    shown++;
+    shownCost += it.cost;
+
+    const row = document.createElement('tr');
+    row.className = 'item-row';
+    row.dataset.idx = idx;
+    row.innerHTML = `
+      <td class="sn"><span class="chev">▶</span>${it.sn}</td>
+      <td class="q"><div class="qtext">${remEscapeHtml(it.question)}</div></td>
+      <td class="cat">${remEscapeHtml(it.category || '—')}</td>
+      <td class="owner">${remEscapeHtml(it.owner)}</td>
+      <td class="dur num">${remEscapeHtml(it.duration)}</td>
+      <td class="num">${remFmtCost(it.cost)}</td>
+      <td></td>
+    `;
+    const statusCell = row.children[6];
+    const select = document.createElement('select');
+    select.className = 'status-select ' + it.status;
+    ['Completed','Pending','Incomplete'].forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      if (s === it.status) opt.selected = true;
+      select.appendChild(opt);
+    });
+    select.addEventListener('click', e => e.stopPropagation());
+    select.addEventListener('change', e => {
+      it.status = e.target.value;
+      select.className = 'status-select ' + it.status;
+      remRenderAll();
+    });
+    statusCell.appendChild(select);
+
+    const detail = document.createElement('tr');
+    detail.className = 'detail-row';
+    detail.style.display = 'none';
+    detail.innerHTML = `
+      <td colspan="7">
+        <span class="detail-label">Full question / evidence required</span>
+        ${remEscapeHtml(it.question)}
+        <span class="detail-label">Remediation action</span>
+        ${remEscapeHtml(it.action)}
+        <span class="detail-label">Data owner</span>
+        ${remEscapeHtml(it.owner)}
+      </td>
+    `;
+
+    row.addEventListener('click', () => {
+      const isOpen = detail.style.display !== 'none';
+      detail.style.display = isOpen ? 'none' : 'table-row';
+      row.classList.toggle('expanded', !isOpen);
+    });
+
+    tbody.appendChild(row);
+    tbody.appendChild(detail);
+  });
+
+  document.getElementById('remEmptyState').style.display = shown === 0 ? 'block' : 'none';
+  document.getElementById('remTableSummary').textContent =
+    `Showing ${shown} of ${REM_ITEMS.length} items · ${remFmtCost(shownCost)}`;
+}
+
+function remEscapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : str;
+  return div.innerHTML;
+}
+
+function remRenderAll() {
+  remRenderTiles();
+  remRenderTable();
+}
+
+document.getElementById('remSearchBox').addEventListener('input', remRenderAll);
+document.getElementById('remStatusFilter').addEventListener('change', remRenderAll);
+document.getElementById('remCategoryFilter').addEventListener('change', remRenderAll);
+document.getElementById('remHideZeroCost').addEventListener('change', remRenderAll);
+
+document.getElementById('remExportBtn').addEventListener('click', () => {
+  // Full item data (not just status) so newly-added items and edits survive a re-import
+  // into a fresh copy of this dashboard, not just status changes on the original 73.
+  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), items: REM_ITEMS }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'remediation-progress.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('remImportFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const list = Array.isArray(data) ? data : data.items;
+      const bySn = {};
+      list.forEach(r => { bySn[String(r.sn)] = r; });
+      let added = 0, updated = 0;
+      REM_ITEMS.forEach(it => {
+        const match = bySn[String(it.sn)];
+        if (match) {
+          if (match.status) it.status = match.status;
+          updated++;
+          delete bySn[String(it.sn)];
+        }
+      });
+      // Anything left in bySn wasn't in REM_ITEMS yet — a new item added in a different
+      // copy of this dashboard and carried in via export. Add it now.
+      Object.values(bySn).forEach(r => {
+        if (r && r.question) {
+          REM_ITEMS.push({
+            sn: String(r.sn ?? remNextAutoSn()),
+            question: r.question || '',
+            owner: r.owner || '—',
+            action: r.action || '',
+            duration: r.duration || 'N/A',
+            cost: Number(r.cost) || 0,
+            status: r.status || 'Pending',
+          });
+          added++;
+        }
+      });
+      remRenderAll();
+      if (added) remLogImportNote(`Imported: ${updated} status update(s), ${added} new item(s) added.`);
+    } catch (err) {
+      alert('Could not read that file as a progress export.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function remLogImportNote(msg) {
+  document.getElementById('remTableSummary').textContent = msg;
+}
+
+function remNextAutoSn() {
+  let n = 1;
+  const existing = new Set(REM_ITEMS.map(it => it.sn));
+  while (existing.has('NEW-' + n)) n++;
+  return 'NEW-' + n;
+}
+
+function remOpenAddModal() {
+  document.getElementById('remAddItemForm').reset();
+  document.getElementById('remFStatus').value = 'Pending';
+  const dl = document.getElementById('remCategoryOptions');
+  dl.innerHTML = '';
+  Array.from(new Set(REM_ITEMS.map(it => it.category).filter(Boolean))).sort().forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    dl.appendChild(opt);
+  });
+  document.getElementById('remAddModalOverlay').style.display = 'flex';
+  document.getElementById('remFQuestion').focus();
+}
+function remCloseAddModal() {
+  document.getElementById('remAddModalOverlay').style.display = 'none';
+}
+
+document.getElementById('remAddItemBtn').addEventListener('click', remOpenAddModal);
+document.getElementById('remAddModalClose').addEventListener('click', remCloseAddModal);
+document.getElementById('remAddModalCancel').addEventListener('click', remCloseAddModal);
+document.getElementById('remAddModalOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'addModalOverlay') remCloseAddModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('remAddModalOverlay').style.display !== 'none') remCloseAddModal();
+});
+
+document.getElementById('remAddItemForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const question = document.getElementById('remFQuestion').value.trim();
+  if (!question) return;
+  const snInput = document.getElementById('remFSn').value.trim();
+  const sn = snInput || remNextAutoSn();
+  if (REM_ITEMS.some(it => it.sn === sn)) {
+    alert(`SN "${sn}" already exists — use a different SN or leave it blank to auto-assign.`);
+    return;
+  }
+  const costRaw = document.getElementById('remFCost').value.trim();
+  REM_ITEMS.push({
+    sn,
+    question,
+    owner: document.getElementById('remFOwner').value.trim() || '—',
+    category: document.getElementById('remFCategory').value.trim() || 'Uncategorized',
+    action: document.getElementById('remFAction').value.trim() || 'No action recorded yet.',
+    duration: document.getElementById('remFDuration').value.trim() || 'N/A',
+    cost: costRaw ? Math.max(0, Math.round(Number(costRaw))) : 0,
+    status: document.getElementById('remFStatus').value,
+  });
+  remCloseAddModal();
+  remPopulateCategoryFilter();
+  remRenderAll();
+});
+
+
+remPopulateCategoryFilter();
+remRenderAll();
+
+</script>
+</body>
+</html>
